@@ -178,6 +178,12 @@ handlePastedText?: (text: string, html?: string) => DraftHandleValue
 ```
 Handle text and html(for rich text) that has been pasted directly into the editor. Returning true will prevent the default paste behavior. 
 
+#### handleBeforePastedText
+```
+handleBeforePastedText?: (text: string, html?: string, textHandler: (text: string, html?: string) => undefined) => undefined
+```
+Modify pasted text and/or html before calling the textHandler, which either runs the default behavior or handlePastedText, if provided.
+
 #### handlePastedFiles
 ```
 handlePastedFiles?: (files: Array<Blob>) => DraftHandleValue

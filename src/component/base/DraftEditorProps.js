@@ -101,6 +101,13 @@ export type DraftEditorProps = {
   // quotes.
   handleBeforeInput?: (chars: string) => DraftHandleValue,
 
+  // Transform pasted text and html before regular behavior. This may be
+  // useful in cases where the pasted text contains characters that you
+  // would like to translate or remove. E.g. immediately converting
+  // `* list item` into a <ul> tag
+  handleBeforePastedText?: (text: string, html?: string, textHandler:
+    (text: string, html?: string) => undefined) => undefined,
+
   handlePastedText?: (text: string, html?: string) => DraftHandleValue,
 
   handlePastedFiles?: (files: Array<Blob>) => DraftHandleValue,
