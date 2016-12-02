@@ -29,6 +29,7 @@ type Props = {
   blockRendererFn: Function,
   blockStyleFn: (block: ContentBlock) => string,
   editorState: EditorState,
+  suppressSyncingSelection: boolean,
 };
 
 /**
@@ -97,6 +98,7 @@ class DraftEditorContents extends React.Component {
       customStyleMap,
       customStyleFn,
       editorState,
+      suppressSyncingSelection,
     } = this.props;
 
     const content = editorState.getCurrentContent();
@@ -136,6 +138,7 @@ class DraftEditorContents extends React.Component {
         key,
         offsetKey,
         selection,
+        suppressSyncingSelection,
         tree: editorState.getBlockTree(key),
       };
 

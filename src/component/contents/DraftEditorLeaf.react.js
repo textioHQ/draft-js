@@ -36,6 +36,8 @@ type Props = {
   // Whether to force the DOM selection after render.
   forceSelection: boolean,
 
+  suppressSyncingSelection: boolean,
+
   // Whether this leaf is the last in its block. Used for a DOM hack.
   isLast: boolean,
 
@@ -74,10 +76,10 @@ class DraftEditorLeaf extends React.Component {
    * text nodes, this would be harder.
    */
   _setSelection(): void {
-    const {selection} = this.props;
+    const { selection, suppressSyncingSelection } = this.props;
 
     // If selection state is irrelevant to the parent block, no-op.
-    if (selection == null || !selection.getHasFocus()) {
+    if (selection == null || !selection.getHasFocus() || suppressSyncingSelection) {
       return;
     }
 
