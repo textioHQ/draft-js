@@ -48,6 +48,7 @@ type Props = {
   blockProps?: Object,
   startIndent?: boolean,
   blockStyleFn: Function,
+  suppressSyncingSelection: boolean,
 };
 
 /**
@@ -147,6 +148,7 @@ class DraftEditorBlock extends React.Component {
             customStyleMap={this.props.customStyleMap}
             customStyleFn={this.props.customStyleFn}
             isLast={ii === lastLeafSet && jj === lastLeaf}
+            suppressSyncingSelection={this.props.suppressSyncingSelection}
           />
         );
       }).toArray();

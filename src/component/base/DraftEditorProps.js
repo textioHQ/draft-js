@@ -119,6 +119,7 @@ export type DraftEditorProps = {
   ) => DraftHandleValue,
 
   allowNativeInsertion?: boolean,
+  suppressSyncingSelection?: boolean,
 
   /**
    * Non-cancelable event triggers.

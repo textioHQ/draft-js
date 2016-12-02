@@ -284,6 +284,7 @@ class DraftEditor extends React.Component {
               customStyleFn={this.props.customStyleFn}
               editorKey={this._editorKey}
               editorState={this.props.editorState}
+              suppressSyncingSelection={this.props.suppressSyncingSelection}
             />
           </div>
         </div>
