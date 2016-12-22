@@ -22,7 +22,7 @@ function convertFromDraftStateToRaw(
   contentState: ContentState
 ): RawDraftContentState {
   var entityStorageMap = {};
-  var rawBlocks = contentState.getBlockMap().map(block => convertFromContentBlockToRaw(block));
+  var rawBlocks = contentState.getBlocksAsArray().map(convertFromContentBlockToRaw);
 
   // Flip storage map so that our storage keys map to global
   // DraftEntity keys.
