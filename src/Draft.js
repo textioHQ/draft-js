@@ -33,7 +33,7 @@ const convertFromContentBlockToRaw = require('convertFromContentBlockToRaw');
 const convertFromDraftStateToRaw = require('convertFromDraftStateToRaw');
 const convertFromHTMLToContentBlocks =
   require('convertFromHTMLToContentBlocks');
-const convertFromRawToContentBlock = require('convertFromContentBlockToRaw');
+const convertFromRawToContentBlock = require('convertFromRawToContentBlock');
 const convertFromRawToDraftState = require('convertFromRawToDraftState');
 const generateRandomKey = require('generateRandomKey');
 const getDefaultKeyBinding = require('getDefaultKeyBinding');
