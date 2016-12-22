@@ -18,11 +18,11 @@ var encodeEntityRanges = require('encodeEntityRanges');
 var encodeInlineStyleRanges = require('encodeInlineStyleRanges');
 
 import type ContentBlock from 'ContentBlock';
-import type {RawDraftContentState} from 'RawDraftContentState';
+import type {RawDraftContentBlock} from 'RawDraftContentBlock';
 
 function covertFromContentBlockToRaw(
   block: ContentBlock
-): RawDraftContentState {
+): Array<RawDraftContentBlock> {
   var entityStorageKey = 0;
   var entityStorageMap = {};
   block.findEntityRanges(
