@@ -20,7 +20,7 @@ var encodeInlineStyleRanges = require('encodeInlineStyleRanges');
 import type ContentBlock from 'ContentBlock';
 import type {RawDraftContentBlock} from 'RawDraftContentBlock';
 
-function covertFromContentBlockToRaw(
+function convertFromContentBlockToRaw(
   block: ContentBlock
 ): RawDraftContentBlock {
   var entityStorageKey = 0;
@@ -49,4 +49,4 @@ function covertFromContentBlockToRaw(
   };
 }
 
-module.exports = covertFromContentBlockToRaw;
+module.exports = convertFromContentBlockToRaw;
