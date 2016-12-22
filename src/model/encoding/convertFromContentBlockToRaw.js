@@ -22,7 +22,7 @@ import type {RawDraftContentBlock} from 'RawDraftContentBlock';
 
 function covertFromContentBlockToRaw(
   block: ContentBlock
-): Array<RawDraftContentBlock> {
+): RawDraftContentBlock {
   var entityStorageKey = 0;
   var entityStorageMap = {};
   block.findEntityRanges(
