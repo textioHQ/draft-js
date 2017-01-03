@@ -103,7 +103,7 @@ class DraftEditorBlock extends React.Component {
   componentWillReceiveProps(nextProps) {
     var selection = nextProps.selection;
     var endKey = selection.getEndKey();
-    if (selection.getHasFocus() && endKey === nextProps.block.getKey()) {
+    if (!nextProps.allowNativeInsertion && selection.getHasFocus() && endKey === nextProps.block.getKey()) {
       this.scrollToCaret();
     }
   }
