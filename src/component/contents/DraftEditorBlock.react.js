@@ -31,11 +31,12 @@ const getScrollPosition = require('getScrollPosition');
 const getViewportDimensions = require('getViewportDimensions');
 const nullthrows = require('nullthrows');
 
-import type { BidiDirection } from 'UnicodeBidiDirection';
-import type { DraftDecoratorType } from 'DraftDecoratorType';
-import type { List } from 'immutable';
+import type {BidiDirection} from 'UnicodeBidiDirection';
+import type {DraftDecoratorType} from 'DraftDecoratorType';
+import type {List} from 'immutable';
 
-const SCROLL_BUFFER = 10;
+// Percent of screen to buffer a scroll
+const SCROLL_BUFFER = 0.1;
 
 type Props = {
   contentState: ContentState,
@@ -100,37 +101,53 @@ class DraftEditorBlock extends React.Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    var selection = nextProps.selection;
-    var endKey = selection.getEndKey();
-    if (!nextProps.allowNativeInsertion && selection.getHasFocus() && endKey === nextProps.block.getKey()) {
-      this.scrollToCaret();
-    }
-  }
+  // componentWillReceiveProps(nextProps) {
+  //   var selection = nextProps.selection;
+  //   var endKey = selection.getEndKey();
+  //   if (!nextProps.allowNativeInsertion && selection.getHasFocus() && endKey === nextProps.block.getKey()) {
+  //     this.scrollToCaret();
+  //   }
+  // }
 
   scrollToCaret(): void {
     var blockNode = ReactDOM.findDOMNode(this);
     var scrollParent = Style.getScrollParent(blockNode);
     var scrollPosition = getScrollPosition(scrollParent);
+    var viewportHeight = getViewportDimensions().height;
+    var scrollBufferBottom = viewportHeight * SCROLL_BUFFER;
+    var scrollBufferTop = viewportHeight * (1 - SCROLL_BUFFER);
     var scrollDelta;
 
     if (scrollParent === window) {
       var nodePosition = getElementPosition(blockNode);
       var nodeBottom = nodePosition.y + nodePosition.height;
-      var viewportHeight = getViewportDimensions().height;
       scrollDelta = nodeBottom - viewportHeight;
-      window.scrollTo(
-        scrollPosition.x,
-        scrollPosition.y + scrollDelta + SCROLL_BUFFER
-      );
+      if (scrollDelta > 0) {
+        window.scrollTo(
+          scrollPosition.x,
+          scrollPosition.y + scrollDelta + scrollBufferBottom
+        );
+      } else if (scrollDelta < -viewportHeight) {
+        window.scrollTo(
+          scrollPosition.x,
+          scrollPosition.y + scrollDelta + scrollBufferTop
+        );
+      }
     } else {
       var blockBottom = blockNode.offsetHeight + blockNode.offsetTop;
       var scrollBottom = scrollParent.offsetHeight + scrollPosition.y;
       scrollDelta = blockBottom - scrollBottom;
-      Scroll.setTop(
-        scrollParent,
-        Scroll.getTop(scrollParent) + scrollDelta + SCROLL_BUFFER
-      );
+      if (scrollDelta > 0) {
+        Scroll.setTop(
+          scrollParent,
+          Scroll.getTop(scrollParent) + scrollDelta + scrollBufferBottom
+        );
+      } else if (scrollDelta < -scrollParent.offsetHeight) {
+        Scroll.setTop(
+          scrollParent,
+          Scroll.getTop(scrollParent) + scrollDelta + scrollBufferTop
+        );
+      }
     }
   }
 
@@ -211,7 +228,7 @@ class DraftEditorBlock extends React.Component {
   }
 
   render(): React.Element<any> {
-    const { direction, offsetKey } = this.props;
+    const {direction, offsetKey} = this.props;
     const className = cx({
       'public/DraftStyleDefault/block': true,
       'public/DraftStyleDefault/ltr': direction === 'LTR',
@@ -229,8 +246,10 @@ class DraftEditorBlock extends React.Component {
 /**
  * Return whether a block overlaps with either edge of the `SelectionState`.
  */
-function isBlockOnSelectionEdge(selection: SelectionState,
-                                key: string): boolean {
+function isBlockOnSelectionEdge(
+  selection: SelectionState,
+  key: string
+): boolean {
   return (
     selection.getAnchorKey() === key ||
     selection.getFocusKey() === key
