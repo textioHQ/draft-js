@@ -274,7 +274,6 @@ class DraftEditor extends React.Component {
             onKeyPress={this._onKeyPress}
             onKeyUp={this._onKeyUp}
             onMouseUp={this._onMouseUp}
-            onPaste={this._onPaste}
             onSelect={this._onSelect}
             ref="editor"
             role={readOnly ? null : (this.props.role || 'textbox')}
@@ -307,6 +306,8 @@ class DraftEditor extends React.Component {
 
   componentDidMount(): void {
     this.setMode('edit');
+    const editorNode = ReactDOM.findDOMNode(this.refs.editor);
+    editorNode.addEventListener('paste', this._onPaste);
 
     /**
      * IE has a hardcoded "feature" that attempts to convert link text into
