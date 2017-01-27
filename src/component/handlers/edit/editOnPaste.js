@@ -104,15 +104,15 @@ function editOnPaste(editor: DraftEditor, e): void {
       editor.focus();
       pasteTrap.innerHTML = '';
       editor.exitCurrentMode();
-      handleTextualPaste(editor, text, html, true);
+      handleTextualPaste(editor, text, html);
     });
   } else {
     e.preventDefault();
-    handleTextualPaste(editor, text, html, data.isRichText());
+    handleTextualPaste(editor, text, html);
   }
 }
 
-function handleTextualPaste(editor, text, html, isRichText) {
+function handleTextualPaste(editor, text, html) {
   let textBlocks: Array<string> = [];
 
   if (
@@ -135,6 +135,7 @@ function handleTextualPaste(editor, text, html, isRichText) {
     // editor in Firefox and IE will not include empty lines. The resulting
     // paste will preserve the newlines correctly.
     const internalClipboard = editor.getClipboard();
+    const isRichText = text && html;
     if (isRichText && internalClipboard) {
       if (
         // If the editorKey is present in the pasted HTML, it should be safe to
