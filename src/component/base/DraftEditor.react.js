@@ -54,6 +54,7 @@ const handlerMap = {
   'drag': DraftEditorDragHandler,
   'cut': null,
   'render': null,
+  'paste': null,
 };
 
 type State = {
@@ -225,6 +226,14 @@ class DraftEditor extends React.Component {
       wordWrap: 'break-word',
     };
 
+    const pasteTrapStyle = {
+      maxWidth: '1px',
+      maxHeight: '1px',
+      overflow: 'hidden',
+      position: 'absolute',
+      opacity: '0.01',
+    };
+
     return (
       <div className={rootClass}>
         {this._renderPlaceholder()}
@@ -285,6 +294,12 @@ class DraftEditor extends React.Component {
               editorState={this.props.editorState}
             />
           </div>
+        </div>
+        <div
+          contentEditable={true}
+          style={pasteTrapStyle}
+          ref={ref => this._pasteTrap = ref }
+          suppressContentEditableWarning>
         </div>
       </div>
     );
