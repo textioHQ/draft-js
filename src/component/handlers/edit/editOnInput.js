@@ -85,6 +85,7 @@ function editOnInput(editor: DraftEditor): void {
     editOnSelect(editor);
   }
 
+  editorState = editor._latestEditorState;
   var selection = editorState.getSelection();
 
   // We'll replace the entire leaf with the text content of the target.
