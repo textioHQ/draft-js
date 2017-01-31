@@ -45,14 +45,6 @@ function editOnInput(editor: DraftEditor): void {
     editor.update(editor._pendingStateFromBeforeInput);
     editor._pendingStateFromBeforeInput = undefined;
   }
-
-  // Most browsers fire a selection event before making spellcheck
-  // and autocorrect changes, but Edge doesn't. We need to grab the
-  // current selection to make sure we're modifying the right block.
-  if (isEdge) {
-    editOnSelect(editor);
-  }
-
   var domSelection = global.getSelection();
 
   var {anchorNode, isCollapsed} = domSelection;
@@ -84,6 +76,13 @@ function editOnInput(editor: DraftEditor): void {
   // No change -- the DOM is up to date. Nothing to do here.
   if (domText === modelText) {
     return;
+  }
+
+  // Most browsers fire a selection event before making spellcheck
+  // and autocorrect changes, but Edge doesn't. We need to grab the
+  // current selection to make sure we're modifying the right block.
+  if (isEdge) {
+    editOnSelect(editor);
   }
 
   var selection = editorState.getSelection();
