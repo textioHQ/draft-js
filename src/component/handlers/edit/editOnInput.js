@@ -19,10 +19,12 @@ var UserAgent = require('UserAgent');
 
 var findAncestorOffsetKey = require('findAncestorOffsetKey');
 var nullthrows = require('nullthrows');
+var editOnSelect = require('editOnSelect');
 
 import type DraftEditor from 'DraftEditor.react';
 
 var isGecko = UserAgent.isEngine('Gecko');
+var isEdge = UserAgent.isBrowser('Edge');
 
 var DOUBLE_NEWLINE = '\n\n';
 
@@ -43,7 +45,6 @@ function editOnInput(editor: DraftEditor): void {
     editor.update(editor._pendingStateFromBeforeInput);
     editor._pendingStateFromBeforeInput = undefined;
   }
-
   var domSelection = global.getSelection();
 
   var {anchorNode, isCollapsed} = domSelection;
@@ -77,6 +78,14 @@ function editOnInput(editor: DraftEditor): void {
     return;
   }
 
+  // Most browsers fire a selection event when the user right-clicks
+  // to bring up the context menu, but Edge doesn't. We need to grab the
+  // current selection to make sure we're modifying the right block.
+  if (isEdge) {
+    editOnSelect(editor);
+    editorState = editor._latestEditorState;
+  }
+
   var selection = editorState.getSelection();
 
   // We'll replace the entire leaf with the text content of the target.
@@ -107,8 +116,8 @@ function editOnInput(editor: DraftEditor): void {
 
   var anchorOffset, focusOffset, startOffset, endOffset;
 
-  if (isGecko) {
-    // Firefox selection does not change while the context menu is open, so
+  if (isGecko || isEdge) {
+    // Firefox and Edge selection does not change while the context menu is open, so
     // we preserve the anchor and focus values of the DOM selection.
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
@@ -117,7 +126,7 @@ function editOnInput(editor: DraftEditor): void {
     anchorOffset = startOffset;
     focusOffset = endOffset;
   } else {
-    // Browsers other than Firefox may adjust DOM selection while the context
+    // Browsers other than Firefox and Edge may adjust DOM selection while the context
     // menu is open, and Safari autocorrect is prone to providing an inaccurate
     // DOM selection. Don't trust it. Instead, use our existing SelectionState
     // and adjust it based on the number of characters changed during the
