@@ -78,14 +78,14 @@ function editOnInput(editor: DraftEditor): void {
     return;
   }
 
-  // Most browsers fire a selection event before making spellcheck
-  // and autocorrect changes, but Edge doesn't. We need to grab the
+  // Most browsers fire a selection event when the user right-clicks
+  // to bring up the context menu, but Edge doesn't. We need to grab the
   // current selection to make sure we're modifying the right block.
   if (isEdge) {
     editOnSelect(editor);
+    editorState = editor._latestEditorState;
   }
 
-  editorState = editor._latestEditorState;
   var selection = editorState.getSelection();
 
   // We'll replace the entire leaf with the text content of the target.
