@@ -41,10 +41,11 @@ import type {DraftEditorProps} from 'DraftEditorProps';
 import type {DraftScrollPosition} from 'DraftScrollPosition';
 
 const isIE = UserAgent.isBrowser('IE');
+const isEdge = UserAgent.isBrowser('Edge');
 
 // IE does not support the `input` event on contentEditable, so we can't
 // observe spellcheck behavior.
-const allowSpellCheck = !isIE;
+const allowSpellCheck = !isIE && !isEdge;
 
 // Define a set of handler objects to correspond to each possible `mode`
 // of editor behavior.
