@@ -76,11 +76,6 @@ function replaceText(
  * occurs on the relevant text nodes.
  */
 function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
-  if (editor._pendingStateFromBeforeInput !== undefined) {
-    editor.update(editor._pendingStateFromBeforeInput);
-    editor._pendingStateFromBeforeInput = undefined;
-  }
-
   var chars = e.data;
 
   // In some cases (ex: IE ideographic space insertion) no character data
@@ -171,13 +166,8 @@ function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
     // change the inserted text, we wait until the text is actually inserted
     // before we actually update our state. That way when we rerender, the text
     // we see in the DOM will already have been inserted properly.
-    editor._pendingStateFromBeforeInput = newEditorState;
-    setImmediate(() => {
-      if (editor._pendingStateFromBeforeInput !== undefined) {
-        editor.update(editor._pendingStateFromBeforeInput);
-        editor._pendingStateFromBeforeInput = undefined;
-      }
-    });
+    editor._usingNativeRendering = true;
+    editor.update(newEditorState);
   }
 }
 
