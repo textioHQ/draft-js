@@ -19,10 +19,12 @@ var UserAgent = require('UserAgent');
 
 var findAncestorOffsetKey = require('findAncestorOffsetKey');
 var nullthrows = require('nullthrows');
+var editOnSelect = require('editOnSelect');
 
 import type DraftEditor from 'DraftEditor.react';
 
 var isGecko = UserAgent.isEngine('Gecko');
+var isEdge = UserAgent.isBrowser('Edge');
 
 var DOUBLE_NEWLINE = '\n\n';
 
@@ -42,6 +44,13 @@ function editOnInput(editor: DraftEditor): void {
   if (editor._pendingStateFromBeforeInput !== undefined) {
     editor.update(editor._pendingStateFromBeforeInput);
     editor._pendingStateFromBeforeInput = undefined;
+  }
+
+  // Most browsers fire a selection event before making spellcheck
+  // and autocorrect changes, but Edge doesn't. We need to grab the
+  // current selection to make sure we're modifying the right block.
+  if (isEdge) {
+    editOnSelect(editor);
   }
 
   var domSelection = global.getSelection();
@@ -107,8 +116,8 @@ function editOnInput(editor: DraftEditor): void {
 
   var anchorOffset, focusOffset, startOffset, endOffset;
 
-  if (isGecko) {
-    // Firefox selection does not change while the context menu is open, so
+  if (isGecko || isEdge) {
+    // Firefox and Edge selection does not change while the context menu is open, so
     // we preserve the anchor and focus values of the DOM selection.
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
@@ -117,7 +126,7 @@ function editOnInput(editor: DraftEditor): void {
     anchorOffset = startOffset;
     focusOffset = endOffset;
   } else {
-    // Browsers other than Firefox may adjust DOM selection while the context
+    // Browsers other than Firefox and Edge may adjust DOM selection while the context
     // menu is open, and Safari autocorrect is prone to providing an inaccurate
     // DOM selection. Don't trust it. Instead, use our existing SelectionState
     // and adjust it based on the number of characters changed during the
