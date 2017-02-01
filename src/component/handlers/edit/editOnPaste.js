@@ -105,7 +105,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
     // Do NOT call e.preventDefault(). Instead, we want the browser to paste, just not in the editor element.
     // Instead, move focus to a dummy contentEditable div (the pasteTrap),
     // let the paste event through, and then copy the html out of the paste trap.
-    // It is important to call setMode('paste') to disable draft's event handlers (so it is blisfully unaware)
+    // It is important to call setMode('paste') to disable the editor's event handlers (so it is blisfully unaware)
     // and then to properly undo the sleight-of-hand created.
     editor.setMode('paste');
     const pasteTrap = editor._pasteTrap;
