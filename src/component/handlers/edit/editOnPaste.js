@@ -109,13 +109,11 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
     // and then to properly undo the sleight-of-hand created.
     editor.setMode('paste');
     const pasteTrap = editor._pasteTrap;
-    pasteTrap.setAttribute('display', 'block');
     pasteTrap.focus();
     setImmediate(() => {
       html = pasteTrap.innerHTML;
       editor.focus();
       pasteTrap.innerHTML = '';
-      pasteTrap.setAttribute('display', 'none');
       editor.exitCurrentMode();
       handleTextualPaste(editor, text, html);
     });
