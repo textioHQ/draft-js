@@ -39,6 +39,9 @@ var DOUBLE_NEWLINE = '\n\n';
  * due to a spellcheck change, and we can incorporate it into our model.
  */
 function editOnInput(editor: DraftEditor): void {
+
+  // We have already updated our internal state appropriately for this input
+  // event. See editOnBeforeInput() for more info
   if (editor._usingNativeRendering) {
     editor._usingNativeRendering = false;
     return;
