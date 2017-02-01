@@ -40,7 +40,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
   // the contentEditable div. So, e in this case comes from a direct editor.addEventListener
   // Therefore, we need to replicate anything that the SyntheticClipboardEvent does that is used
   // Currently, that is only getting the clipboard, which involves falling back to window for IE & Edge.
-  const clipboard = e.clipboardData ? e.clipboardData : window.clipboardData;
+  const clipboard = 'clipboardData' in event ? e.clipboardData : window.clipboardData;
   var data = new DataTransfer(clipboard);
 
   // Get files, unless this is likely to be a string the user wants inline.
@@ -102,7 +102,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
   if (text && !html) {
     // The pasted content has text, but not HTML. For certain browsers (old versions of Safari, IE, and Edge)
     // the html isn't provided as part of the clipboardData. To work around this, follow the following algorithm:
-    // Do NOT call e.preventDefault(). Instead, we want the browser to paste, just not in the draft element.
+    // Do NOT call e.preventDefault(). Instead, we want the browser to paste, just not in the editor element.
     // Instead, move focus to a dummy contentEditable div (the pasteTrap),
     // let the paste event through, and then copy the html out of the paste trap.
     // It is important to call setMode('paste') to disable draft's event handlers (so it is blisfully unaware)
