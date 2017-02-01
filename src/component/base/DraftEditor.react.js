@@ -321,6 +321,11 @@ class DraftEditor extends React.Component {
     }
   }
 
+  componentWillUnmount(): void {
+    const editorNode = ReactDOM.findDOMNode(this.refs.editor);
+    editorNode.removeEventListener('paste', this._onPaste);
+  }
+
   /**
    * Prevent selection events from affecting the current editor state. This
    * is mostly intended to defend against IE, which fires off `selectionchange`
