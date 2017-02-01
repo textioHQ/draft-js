@@ -232,6 +232,7 @@ class DraftEditor extends React.Component {
       overflow: 'hidden',
       position: 'absolute',
       opacity: '0.01',
+      display: 'none',
     };
 
     return (
