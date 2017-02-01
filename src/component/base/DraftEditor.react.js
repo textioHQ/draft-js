@@ -306,6 +306,11 @@ class DraftEditor extends React.Component {
 
   componentDidMount(): void {
     this.setMode('edit');
+
+    // Unfortunately, due to https://github.com/facebook/react/issues/8909
+    // it is not possible to set up an onPaste handler through react.
+    // Manually use addEventListener and removeEventListener below.
+    // See the comments in editOnPaste for why this is needed.
     const editorNode = ReactDOM.findDOMNode(this.refs.editor);
     editorNode.addEventListener('paste', this._onPaste);
 
