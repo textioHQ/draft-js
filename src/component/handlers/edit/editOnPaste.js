@@ -97,7 +97,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
   }
 
   const text = data.getText();
-  let html = data.getHTML();
+  let html = getHTML();
 
   if (text && !html) {
     // The pasted content has text, but not HTML. For certain browsers (old versions of Safari, IE, and Edge)
@@ -209,6 +209,14 @@ function handleTextualPaste(editor, text, html) {
     var textMap = BlockMapBuilder.createFromArray(textFragment);
     editor.update(insertFragment(editor._latestEditorState, textMap));
   }
+}
+
+function getHTML(data: DataTransfer) {
+  // Work around DataTransfer issue in IE11 https://github.com/facebook/draft-js/issues/656
+  if (data.data.getData && !data.types.length) {
+    return undefined;
+  }
+  return data.getHTML();
 }
 
 function insertFragment(
