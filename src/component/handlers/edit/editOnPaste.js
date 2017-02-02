@@ -99,7 +99,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
   const text = data.getText();
   let html = getHTML(data);
 
-  if (text && !html) {
+  if (!html) {
     // The pasted content has text, but not HTML. For certain browsers (old versions of Safari, IE, and Edge)
     // the html isn't provided as part of the clipboardData. To work around this, follow the following algorithm:
     // Do NOT call e.preventDefault(). Instead, we want the browser to paste, just not in the editor element.
