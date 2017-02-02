@@ -100,7 +100,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
   const text = data.getText();
   let html = getHTML(data);
 
-  if (!html && !doesClipboardExposeHtml()) {
+  if (!html && needsClipboardPolyfill()) {
     // The pasted content is missing HTML. For certain browsers (old versions of Safari, IE, and Edge)
     // the html isn't provided as part of the clipboardData. To work around this, follow the following algorithm:
     // Do NOT call e.preventDefault(). Instead, we want the browser to paste, just not in the editor element.
@@ -220,7 +220,7 @@ function getHTML(data: DataTransfer) {
   return data.getHTML();
 }
 
-function doesClipboardExposeHtml() {
+function needsClipboardPolyfill() {
   const isEdge = UserAgent.isBrowser('Edge');
   const isIE = UserAgent.isBrowser('IE');
   const isOldSafari = UserAgent.isBrowser('Safari < 10');
