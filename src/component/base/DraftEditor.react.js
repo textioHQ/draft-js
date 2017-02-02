@@ -86,6 +86,7 @@ class DraftEditor extends React.Component {
   _dragCount: number;
   _internalDrag: boolean;
   _editorKey: string;
+  _editor: React.Element<any>;
   _placeholderAccessibilityID: string;
   _latestEditorState: EditorState;
   _renderNativeContent: boolean;
@@ -159,6 +160,8 @@ class DraftEditor extends React.Component {
     this._onPaste = this._buildHandler('onPaste');
     this._onSelect = this._buildHandler('onSelect');
 
+    this._setEditorRef = this._setEditorRef.bind(this);
+
     // Manual binding for public and internal methods.
     this.focus = this._focus.bind(this);
     this.blur = this._blur.bind(this);
@@ -212,6 +215,23 @@ class DraftEditor extends React.Component {
     return null;
   }
 
+  _setEditorRef(ref: React.Element<any>): void {
+    // Unfortunately, due to https://github.com/facebook/react/issues/8909
+    // it is not possible to set up an onPaste handler through react.
+    // Manually use addEventListener and removeEventListener below.
+    // See the comments in editOnPaste for why this is needed.
+    if (this._editor) {
+      const editorNode = ReactDOM.findDOMNode(this._editor);
+      editorNode.removeEventListener('paste', this._onPaste);
+    }
+
+    this._editor = ref;
+    if (this._editor) {
+      const editorNode = ReactDOM.findDOMNode(this._editor);
+      editorNode.addEventListener('paste', this._onPaste);
+    }
+  }
+
   render(): React.Element<any> {
     const {readOnly, textAlignment} = this.props;
     const rootClass = cx({
@@ -227,11 +247,11 @@ class DraftEditor extends React.Component {
       wordWrap: 'break-word',
     };
 
-    const pasteTrapStyle = {
+    const trapDivStyle = {
       maxWidth: '1px',
       maxHeight: '1px',
       overflow: 'hidden',
-      position: 'absolute',
+      position: 'fixed',
       opacity: '0.01',
       left: '-999px',
     };
@@ -277,7 +297,7 @@ class DraftEditor extends React.Component {
             onKeyUp={this._onKeyUp}
             onMouseUp={this._onMouseUp}
             onSelect={this._onSelect}
-            ref="editor"
+            ref={this._setEditorRef}
             role={readOnly ? null : (this.props.role || 'textbox')}
             spellCheck={allowSpellCheck && this.props.spellCheck}
             style={contentStyle}
@@ -298,8 +318,14 @@ class DraftEditor extends React.Component {
         </div>
         <div
           contentEditable={true}
-          style={pasteTrapStyle}
+          style={trapDivStyle}
           ref={ref => this._pasteTrap = ref }
+          suppressContentEditableWarning>
+        </div>
+        <div
+          contentEditable={true}
+          style={trapDivStyle}
+          ref={ref => this._copyTrap = ref }
           suppressContentEditableWarning>
         </div>
       </div>
@@ -308,13 +334,6 @@ class DraftEditor extends React.Component {
 
   componentDidMount(): void {
     this.setMode('edit');
-
-    // Unfortunately, due to https://github.com/facebook/react/issues/8909
-    // it is not possible to set up an onPaste handler through react.
-    // Manually use addEventListener and removeEventListener below.
-    // See the comments in editOnPaste for why this is needed.
-    const editorNode = ReactDOM.findDOMNode(this.refs.editor);
-    editorNode.addEventListener('paste', this._onPaste);
 
     /**
      * IE has a hardcoded "feature" that attempts to convert link text into
@@ -326,11 +345,6 @@ class DraftEditor extends React.Component {
     if (isIE) {
       document.execCommand('AutoUrlDetect', false, false);
     }
-  }
-
-  componentWillUnmount(): void {
-    const editorNode = ReactDOM.findDOMNode(this.refs.editor);
-    editorNode.removeEventListener('paste', this._onPaste);
   }
 
   /**
@@ -363,7 +377,7 @@ class DraftEditor extends React.Component {
   _focus(scrollPosition?: DraftScrollPosition): void {
     const {editorState} = this.props;
     const alreadyHasFocus = editorState.getSelection().getHasFocus();
-    const editorNode = ReactDOM.findDOMNode(this.refs.editor);
+    const editorNode = ReactDOM.findDOMNode(this._editor);
 
     const scrollParent = Style.getScrollParent(editorNode);
     const {x, y} = scrollPosition || getScrollPosition(scrollParent);
@@ -390,7 +404,7 @@ class DraftEditor extends React.Component {
   }
 
   _blur(): void {
-    ReactDOM.findDOMNode(this.refs.editor).blur();
+    ReactDOM.findDOMNode(this._editor).blur();
   }
 
   /**
