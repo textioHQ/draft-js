@@ -21,6 +21,7 @@ var getEntityKeyForSelection = require('getEntityKeyForSelection');
 var isSelectionAtLeafStart = require('isSelectionAtLeafStart');
 var nullthrows = require('nullthrows');
 var setImmediate = require('setImmediate');
+var editOnInput = require('editOnInput');
 
 import type DraftEditor from 'DraftEditor.react';
 import type {DraftInlineStyle} from 'DraftInlineStyle';
@@ -36,6 +37,7 @@ const isEventHandled = require('isEventHandled');
 var FF_QUICKFIND_CHAR = '\'';
 var FF_QUICKFIND_LINK_CHAR = '\/';
 var isFirefox = UserAgent.isBrowser('Firefox');
+var isIE = UserAgent.isBrowser('IE');
 
 function mustPreventDefaultForCharacter(character: string): boolean {
   return (
@@ -77,6 +79,7 @@ function replaceText(
  */
 function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
   var chars = e.data;
+  console.log('char', e.data);
 
   // In some cases (ex: IE ideographic space insertion) no character data
   // is provided. There's nothing to do when this happens.
@@ -168,8 +171,14 @@ function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
     // 'x' to 'abc' in an onChange() handler, we don't want our editOnInput()
     // logic to squash that change in favor of the typed 'x'. Set a flag to
     // ignore the next editOnInput() event in favor of what's in our internal state.
-    editor._usingNativeRendering = true;
-    editor.update(newEditorState);
+    editor._waitingOnInput = true;
+    editor.update(newEditorState, true);
+
+    if (isIE) {
+      setImmediate(() => {
+        editOnInput(editor);
+      });
+    }
   }
 }
 

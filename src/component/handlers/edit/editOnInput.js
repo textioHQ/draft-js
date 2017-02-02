@@ -42,9 +42,11 @@ function editOnInput(editor: DraftEditor): void {
 
   // We have already updated our internal state appropriately for this input
   // event. See editOnBeforeInput() for more info
-  if (editor._usingNativeRendering) {
-    editor._usingNativeRendering = false;
-    return;
+  if (editor._waitingOnInput) {
+    if (!editor._renderNativeContent) {
+      return;
+    }
+    editor._waitingOnInput = false;
   }
 
   var domSelection = global.getSelection();
