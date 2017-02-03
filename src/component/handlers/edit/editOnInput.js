@@ -40,6 +40,10 @@ var DOUBLE_NEWLINE = '\n\n';
  */
 function editOnInput(editor: DraftEditor): void {
 
+  if (editor._lastUpdateWasInput) {
+    return;
+  }
+
   // We have already updated our internal state appropriately for this input
   // event. See editOnBeforeInput() for more info
   if (editor._waitingOnInput) {
@@ -48,6 +52,8 @@ function editOnInput(editor: DraftEditor): void {
     }
     editor._waitingOnInput = false;
   }
+
+  editor._lastUpdateWasInput = true;
 
   var domSelection = global.getSelection();
 
