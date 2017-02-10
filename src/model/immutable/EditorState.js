@@ -336,12 +336,11 @@ class EditorState {
   /**
    * Replace the contentState with the new one, without altering the undo stack
    * This should only be used in limited circumstances where the selection is unaltered
-   * and the goal is to provide a silent transformation which is not user-visible
+   * and the goal is to provide a silent transformation
    */
   static replace(
     editorState: EditorState,
-    contentState: ContentState,
-    forceSelection: boolean = editorState.mustForceSelection(),
+    contentState: ContentState
 ): EditorState {
     var oldContent = editorState.getCurrentContent();
     if (oldContent.getSelectionAfter() !== contentState.getSelectionAfter()) {
@@ -356,7 +355,6 @@ class EditorState {
     return EditorState.set(editorState, {
       currentContent: contentState,
       directionMap,
-      forceSelection,
     });
   }
 

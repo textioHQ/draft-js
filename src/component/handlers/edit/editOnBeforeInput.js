@@ -190,8 +190,6 @@ function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
       editor._waitingOnInput = false;
       editor._renderNativeContent = false;
     }
-
-
   }
 }
 
