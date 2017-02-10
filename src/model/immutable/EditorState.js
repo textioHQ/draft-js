@@ -334,6 +334,33 @@ class EditorState {
   }
 
   /**
+   * Replace the contentState with the new one, without altering the undo stack
+   * This should only be used in limited circumstances where the selection is unaltered
+   * and the goal is to provide a silent transformation which is not user-visible
+   */
+  static replace(
+    editorState: EditorState,
+    contentState: ContentState,
+    forceSelection: boolean = editorState.mustForceSelection(),
+): EditorState {
+    var oldContent = editorState.getCurrentContent();
+    if (oldContent.getSelectionAfter() !== contentState.getSelectionAfter()) {
+      throw new Error('Cannot replace the content when the selection differs. Use push instead');
+    }
+
+    var directionMap = EditorBidiService.getDirectionMap(
+      contentState,
+      editorState.getDirectionMap()
+    );
+
+    return EditorState.set(editorState, {
+      currentContent: contentState,
+      directionMap,
+      forceSelection,
+    });
+  }
+
+  /**
    * Push the current ContentState onto the undo stack if it should be
    * considered a boundary state, and set the provided ContentState as the
    * new current content.
