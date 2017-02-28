@@ -14,16 +14,9 @@
 
 var ContentState = require('ContentState');
 
-var createCharacterList = require('createCharacterList');
-var decodeEntityRanges = require('decodeEntityRanges');
-var decodeInlineStyleRanges = require('decodeInlineStyleRanges');
-var generateRandomKey = require('generateRandomKey');
-var Immutable = require('immutable');
 var convertFromRawToContentBlock = require('convertFromRawToContentBlock');
 
 import type {RawDraftContentState} from 'RawDraftContentState';
-
-var {Map} = Immutable;
 
 function convertFromRawToDraftState(
   rawState: RawDraftContentState
