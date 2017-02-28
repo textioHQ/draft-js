@@ -137,10 +137,20 @@ export type DraftEditorProps = {
 
   // Provide a function that will construct CSS style objects given inline
   // style names.
-  customStyleFn?: (style: DraftInlineStyle) => ?Object,
+  customStyleFn?: (style: DraftInlineStyle, block: ContentBlock) => ?Object,
 
   // Provide a map of block rendering configurations. Each block type maps to
   // an element tag and an optional react element wrapper. This configuration
   // is used for both rendering and paste processing.
   blockRenderMap: DraftBlockRenderMap
+};
+
+export type DraftEditorDefaultProps = {
+  blockRenderMap: DraftBlockRenderMap,
+  blockRendererFn: (block: ContentBlock) => ?Object,
+  blockStyleFn: (type: number) => string,
+  keyBindingFn: (e: SyntheticKeyboardEvent) => ?string,
+  readOnly: boolean,
+  spellCheck: boolean,
+  stripPastedStyles: boolean,
 };
