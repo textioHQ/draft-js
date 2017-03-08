@@ -98,12 +98,6 @@ class DraftEditorLeaf extends React.Component {
       targetNode = child;
     } else if (child.tagName === 'BR') {
       targetNode = node;
-    } else if (child.firstChild.nodeType === Node.ELEMENT_NODE &&
-        child.firstChild.getAttribute('data-mozilla-fix') === 'true'
-    ) {
-      // We've added an extra span (see DraftEditorTextNode.react.js) to prevent Firefox spellcheck from destroying
-      // our content. Skip past the span to get to the real text node.
-      targetNode = child.firstChild.nextSibling.firstChild;
     } else {
       targetNode = child.firstChild;
     }
