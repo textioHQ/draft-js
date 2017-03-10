@@ -26,7 +26,6 @@ var {
   List,
   Repeat,
   Record,
-  OrderedSet,
 } = Immutable;
 
 var returnTrue = emptyFunction.thatReturnsTrue;
@@ -138,7 +137,7 @@ function generateLeaves(
   var inlineStyles = characters.map(c => c.getStyle()).toList();
   findRangesImmutable(
     inlineStyles,
-    areInlineStylesEqual,
+    areEqual,
     returnTrue,
     (start, end) => {
       leaves.push(
@@ -154,10 +153,6 @@ function generateLeaves(
 
 function areEqual(a: any, b: any): boolean {
   return a === b;
-}
-
-function areInlineStylesEqual(a: OrderedSet, b: OrderedSet) {
-    return a === b || a.size === 0 && b.size === 0;
 }
 
 module.exports = BlockTree;
