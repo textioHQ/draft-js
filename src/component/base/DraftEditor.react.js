@@ -454,7 +454,10 @@ class DraftEditor extends React.Component {
    */
   _restoreEditorDOM(scrollPosition?: DraftScrollPosition): void {
     this.setState({containerKey: this.state.containerKey + 1}, () => {
-      this._focus(scrollPosition);
+
+      // This setTimeout ensures the editor doesn't jitter in IE as
+      // the focus event can happen before the editor is fully rendered
+      this.setTimeout(this._focus(scrollPosition), 0);
     });
   }
 
