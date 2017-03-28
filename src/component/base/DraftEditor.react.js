@@ -267,7 +267,6 @@ class DraftEditor extends React.Component {
         {this._renderPlaceholder()}
         <div
           className={cx('DraftEditor/editorContainer')}
-          key={'editor' + this.state.containerKey}
           ref="editorContainer">
           <div
             aria-activedescendant={
@@ -310,6 +309,7 @@ class DraftEditor extends React.Component {
             suppressContentEditableWarning
             tabIndex={this.props.tabIndex}>
             <DraftEditorContents
+              key={'editor' + this.state.containerKey}
               blockRenderMap={this.props.blockRenderMap}
               blockRendererFn={this.props.blockRendererFn}
               blockStyleFn={this.props.blockStyleFn}
