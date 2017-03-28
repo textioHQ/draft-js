@@ -457,7 +457,7 @@ class DraftEditor extends React.Component {
 
       // This setTimeout ensures the editor doesn't jitter in IE as
       // the focus event can happen before the editor is fully rendered
-      this.setTimeout(this._focus(scrollPosition), 0);
+      setTimeout(this._focus(scrollPosition), 0);
     });
   }
 
