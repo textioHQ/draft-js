@@ -267,7 +267,6 @@ class DraftEditor extends React.Component {
         {this._renderPlaceholder()}
         <div
           className={cx('DraftEditor/editorContainer')}
-          key={'editor' + this.state.containerKey}
           ref="editorContainer">
           <div
             aria-activedescendant={
@@ -310,6 +309,17 @@ class DraftEditor extends React.Component {
             suppressContentEditableWarning
             tabIndex={this.props.tabIndex}>
             <DraftEditorContents
+
+              // This key is on DraftEditorContents because we need to modify the CE div's inline styles to add padding
+              // on either side. We need this padding to be on either side of the CE div in order to have a click
+              // translate into an appropriate selection in draft. Because the padding is dynamically calculated as the
+              // window resizes we can't put it in a class; it has to be an inline style. When the key is on the root
+              // element, changing it rerenders the CE div and blows away our padding styles, which causes a jitter in
+              // IE. Putting the key here is sufficient to rerender the contents of the editor.
+              // @see https://github.com/textioHQ/editor/issues/618
+              // @see https://github.com/textioHQ/frontend/blob/d70af8a570163d7b3b3012712f58a4257c5b7282/app/es/helpers/borderManager.js#L111-L111
+              // @see https://github.com/textioHQ/frontend/blob/e456e374f5edcbad7bb11952b542190b52220093/app/es/components/editor/content.js#L98-L98
+              key={'editor' + this.state.containerKey}
               blockRenderMap={this.props.blockRenderMap}
               blockRendererFn={this.props.blockRendererFn}
               blockStyleFn={this.props.blockStyleFn}
