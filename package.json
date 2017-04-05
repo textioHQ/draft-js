@@ -20,11 +20,7 @@
   "repository": "facebook/draft-js",
   "license": "BSD-3-Clause",
   "scripts": {
-    "prepublish": "npm run build",
-    "deploy": "npm pack && s3-deploy *.tgz --region us-east-1 --bucket textio-web-deps",
-    "rev": "npm run prepublish && npm version patch && npm run deploy && npm run postpublish",
-    "revbeta": "npm run prepublish && npm version prerelease && npm run deploy && npm run postpublish",
-    "postpublish": "git push && git push --tags",
+    "deploy": "npm run build && npm pack && s3-deploy *.tgz --region us-east-1 --bucket textio-web-deps",
     "pretest": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json",
     "build": "gulp",
     "postbuild": "node node_modules/fbjs-scripts/node/check-lib-requires.js lib",
