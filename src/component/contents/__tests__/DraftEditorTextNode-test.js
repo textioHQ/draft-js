@@ -47,8 +47,7 @@ describe('DraftEditorTextNode', function() {
     var node = ReactDOM.findDOMNode(stub);
     expect(node.tagName).toBe('SPAN');
 
-    var hasGeckoComments = testString !== BLOCK_DELIMITER_CHAR;
-    expect(node.childNodes.length).toBe(hasGeckoComments ? 2 : 1);
+    expect(node.childNodes.length).toBe(1);
     expect(node.lastChild.textContent).toBe(testString);
   }
 
