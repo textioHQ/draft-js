@@ -391,7 +391,7 @@ class DraftEditor extends React.Component {
    * scroll state and put it back in place after focus has been forced.
    */
   _focus(scrollPosition?: DraftScrollPosition): void {
-    const {editorState} = this.props;
+    const editorState = this._latestEditorState;
     const alreadyHasFocus = editorState.getSelection().getHasFocus();
     const editorNode = ReactDOM.findDOMNode(this._editor);
 
