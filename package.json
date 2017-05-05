@@ -26,7 +26,7 @@
     "postbuild": "node node_modules/fbjs-scripts/node/check-lib-requires.js lib",
     "lint": "eslint .",
     "flow": "flow src",
-    "test": "NODE_ENV=test jest",
+    "test": "NODE_ENV=test jest -i",
     "test-ci": "NODE_ENV=test npm run lint && npm run flow && npm run test",
     "rev": "npm version patch && git push --follow-tags",
     "revbeta": "sh ./make_beta.sh && npm version prerelease && git push --follow-tags"
