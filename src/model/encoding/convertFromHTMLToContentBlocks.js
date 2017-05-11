@@ -112,7 +112,7 @@ function getEmptyChunk(): Chunk {
 }
 
 function getWhitespaceChunk(inEntity: ?string): Chunk {
-  var entities = new Array(1);
+  var entities = [undefined];
   if (inEntity) {
     entities[0] = inEntity;
   }
@@ -128,7 +128,7 @@ function getSoftNewlineChunk(): Chunk {
   return {
     text: '\n',
     inlines: [OrderedSet()],
-    entities: new Array(1),
+    entities: [undefined],
     blocks: [],
   };
 }
@@ -137,7 +137,7 @@ function getBlockDividerChunk(block: DraftBlockType, depth: number): Chunk {
   return {
     text: '\r',
     inlines: [OrderedSet()],
-    entities: new Array(1),
+    entities: [undefined],
     blocks: [{
       type: block,
       depth: Math.max(0, Math.min(MAX_DEPTH, depth)),
