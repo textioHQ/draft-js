@@ -34,6 +34,7 @@ const generateRandomKey = require('generateRandomKey');
 const getDefaultKeyBinding = require('getDefaultKeyBinding');
 const nullthrows = require('nullthrows');
 const getScrollPosition = require('getScrollPosition');
+const editOnSelect = require('editOnSelect');
 
 import type {BlockMap} from 'BlockMap';
 import type {DraftEditorModes} from 'DraftEditorModes';
@@ -188,6 +189,14 @@ class DraftEditor extends React.Component {
   _buildHandler(eventName: string): Function {
     return (e) => {
       if (!this.props.readOnly) {
+        const method = this._handler && this._handler[eventName];
+        method && method(this, e);
+      } else if (eventName === 'onCopy') {
+        // React does not fire onSelect for readonly divs (aka non-content-editable divs). If a user
+        // selects some text and hits 'copy' nothing will be copied because the selectState contains
+        // nothing :( Call editOnSelect to force the actual DOM selection onto the editor and then
+        // allow the normal copy method to do its thing.
+        editOnSelect(this)
         const method = this._handler && this._handler[eventName];
         method && method(this, e);
       }
