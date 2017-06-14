@@ -3,7 +3,7 @@
 ## Textio: How to Deploy
 
 ### Deploying From Master
-1. Go to the `master` branch locally
+1. Go to the `release` branch locally
 2. Make sure it's up-to-date by running a `git pull --rebase`
 3. Run `npm run rev`
 4. Note the version number output. This is the same version number that CircleCI will deploy to npm. You can use this to update the `package.json` of a project that relies on this component
