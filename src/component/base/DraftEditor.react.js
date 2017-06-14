@@ -34,6 +34,7 @@ const generateRandomKey = require('generateRandomKey');
 const getDefaultKeyBinding = require('getDefaultKeyBinding');
 const nullthrows = require('nullthrows');
 const getScrollPosition = require('getScrollPosition');
+const editOnSelect = require('editOnSelect');
 
 import type {BlockMap} from 'BlockMap';
 import type {DraftEditorModes} from 'DraftEditorModes';
@@ -188,6 +189,10 @@ class DraftEditor extends React.Component {
   _buildHandler(eventName: string): Function {
     return (e) => {
       if (!this.props.readOnly) {
+        const method = this._handler && this._handler[eventName];
+        method && method(this, e);
+      } else if (eventName === 'onCopy') {
+        editOnSelect(this)
         const method = this._handler && this._handler[eventName];
         method && method(this, e);
       }
