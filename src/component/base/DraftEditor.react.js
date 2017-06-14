@@ -192,6 +192,10 @@ class DraftEditor extends React.Component {
         const method = this._handler && this._handler[eventName];
         method && method(this, e);
       } else if (eventName === 'onCopy') {
+        // React does not fire onSelect for readonly divs (aka non-content-editable divs). If a user
+        // selects some text and hits 'copy' nothing will be copied because the selectState contains
+        // nothing :( Call editOnSelect to force the actual DOM selection onto the editor and then
+        // allow the normal copy method to do its thing.
         editOnSelect(this)
         const method = this._handler && this._handler[eventName];
         method && method(this, e);
