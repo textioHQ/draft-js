@@ -71,7 +71,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
           style: editorState.getCurrentInlineStyle(),
           entity: getEntityKeyForSelection(
             editorState.getCurrentContent(),
-            editorState.getSelection()
+            editorState.getSelection(),
           ),
         });
 
@@ -81,15 +81,15 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
         var withInsertedText = DraftModifier.replaceWithFragment(
           editorState.getCurrentContent(),
           editorState.getSelection(),
-          fragment
+          fragment,
         );
 
         editor.update(
           EditorState.push(
             editorState,
             withInsertedText,
-            'insert-fragment'
-          )
+            'insert-fragment',
+          ),
         );
       });
 
@@ -130,7 +130,7 @@ function handleTextualPaste(editor, text, html) {
 
   if (
     editor.props.handlePastedText &&
-    isEventHandled(editor.props.handlePastedText(text, html))
+    isEventHandled(editor.props.handlePastedText(text, html, editorState))
   ) {
     return;
   }
@@ -164,7 +164,7 @@ function handleTextualPaste(editor, text, html) {
         )
       ) {
         editor.update(
-          insertFragment(editor._latestEditorState, internalClipboard)
+          insertFragment(editor._latestEditorState, internalClipboard),
         );
         return;
       }
@@ -174,14 +174,14 @@ function handleTextualPaste(editor, text, html) {
     if (html) {
       var htmlFragment = DraftPasteProcessor.processHTML(
         html,
-        editor.props.blockRenderMap
+        editor.props.blockRenderMap,
       );
       if (htmlFragment) {
         const { contentBlocks, entityMap } = htmlFragment;
         if (contentBlocks) {
           var htmlMap = BlockMapBuilder.createFromArray(contentBlocks);
           editor.update(
-            insertFragment(editor._latestEditorState, htmlMap, entityMap)
+            insertFragment(editor._latestEditorState, htmlMap, entityMap),
           );
           return;
         }
@@ -194,18 +194,17 @@ function handleTextualPaste(editor, text, html) {
   }
 
   if (textBlocks.length) {
-    var editorState = editor._latestEditorState;
     var character = CharacterMetadata.create({
       style: editorState.getCurrentInlineStyle(),
       entity: getEntityKeyForSelection(
         editorState.getCurrentContent(),
-        editorState.getSelection()
+        editorState.getSelection(),
       ),
     });
 
     var textFragment = DraftPasteProcessor.processText(
       textBlocks,
-      character
+      character,
     );
 
     var textMap = BlockMapBuilder.createFromArray(textFragment);
@@ -236,7 +235,7 @@ function insertFragment(
   var newContent = DraftModifier.replaceWithFragment(
     editorState.getCurrentContent(),
     editorState.getSelection(),
-    fragment
+    fragment,
   );
   // TODO: merge the entity map once we stop using DraftEntity
   // like this:
@@ -245,7 +244,7 @@ function insertFragment(
   return EditorState.push(
     editorState,
     newContent.set('entityMap', entityMap),
-    'insert-fragment'
+    'insert-fragment',
   );
 }
 

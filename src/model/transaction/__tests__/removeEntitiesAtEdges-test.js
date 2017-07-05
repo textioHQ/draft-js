@@ -47,14 +47,14 @@ describe('removeEntitiesAtEdges', () => {
 
   function expectNullEntities(block) {
     expect(
-      getEntities(block)
+      getEntities(block),
     ).toEqual(
-      List(Repeat(null, block.getLength())).toJS()
+      List(Repeat(null, block.getLength())).toJS(),
     );
   }
 
   function setEntityMutability(mutability) {
-    contentState.getEntityMap()._get = () => ({
+    contentState.getEntityMap().__get = () => ({
       getMutability: () => mutability,
     });
   }

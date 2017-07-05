@@ -19,10 +19,12 @@ import type {RawDraftContentState} from 'RawDraftContentState';
 import convertFromContentBlockToRaw from 'convertFromContentBlockToRaw';
 
 function convertFromDraftStateToRaw(
-  contentState: ContentState
+  contentState: ContentState,
 ): RawDraftContentState {
   var entityStorageMap = {};
-  var rawBlocks = contentState.getBlocksAsArray().map(convertFromContentBlockToRaw);
+  var rawBlocks = contentState.
+    getBlocksAsArray().
+    map(convertFromContentBlockToRaw);
 
   // Flip storage map so that our storage keys map to global
   // DraftEntity keys.
