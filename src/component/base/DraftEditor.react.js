@@ -96,6 +96,7 @@ class DraftEditor extends React.Component {
   _latestEditorState: EditorState;
   _renderNativeContent: boolean;
   _updatedNativeInsertionBlock: boolean;
+  _latestCommittedEditorState: EditorState;
 
   /**
    * Define proxies that can route events to the current handler.
@@ -143,6 +144,7 @@ class DraftEditor extends React.Component {
     this._editorKey = props.editorKey || generateRandomKey();
     this._placeholderAccessibilityID = 'placeholder-' + this._editorKey;
     this._latestEditorState = props.editorState;
+    this._latestCommittedEditorState = props.editorState;
 
     this._onBeforeInput = this._buildHandler('onBeforeInput');
     this._onBlur = this._buildHandler('onBlur');
@@ -390,6 +392,7 @@ class DraftEditor extends React.Component {
 
   componentDidUpdate(): void {
     this._blockSelectEvents = false;
+    this._latestCommittedEditorState = this.props.editorState;
   }
 
   /**
