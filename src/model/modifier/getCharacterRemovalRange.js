@@ -130,7 +130,7 @@ function getEntityRemovalRange(
 
   // `MUTABLE` entities can just have the specified range of text removed
   // directly. No adjustments are needed.
-  if (mutability === 'MUTABLE') {
+  if (mutability === 'MUTABLE' || mutability === 'PLAIN') {
     return selectionState;
   }
 
