@@ -21,7 +21,7 @@ import type ContentBlock from 'ContentBlock';
 import type {RawDraftContentBlock} from 'RawDraftContentBlock';
 
 function convertFromContentBlockToRaw(
-  block: ContentBlock
+  block: ContentBlock,
 ): RawDraftContentBlock {
   var entityStorageKey = 0;
   var entityStorageMap = {};
@@ -30,12 +30,12 @@ function convertFromContentBlockToRaw(
     start => {
       // Stringify to maintain order of otherwise numeric keys.
       var stringifiedEntityKey = DraftStringKey.stringify(
-        block.getEntityAt(start)
+        block.getEntityAt(start),
       );
       if (!entityStorageMap.hasOwnProperty(stringifiedEntityKey)) {
         entityStorageMap[stringifiedEntityKey] = '' + (entityStorageKey++);
       }
-    }
+    },
   );
 
   return {

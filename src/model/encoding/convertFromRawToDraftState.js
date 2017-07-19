@@ -19,10 +19,11 @@ var convertFromRawToContentBlock = require('convertFromRawToContentBlock');
 import type {RawDraftContentState} from 'RawDraftContentState';
 
 function convertFromRawToDraftState(
-  rawState: RawDraftContentState
+  rawState: RawDraftContentState,
 ): ContentState {
   var {blocks, entityMap} = rawState;
-  var contentBlocks = blocks.map(block => convertFromRawToContentBlock(block, entityMap));
+  var contentBlocks = blocks.map(
+    block => convertFromRawToContentBlock(block, entityMap));
 
   return ContentState.createFromBlockArray(contentBlocks);
 }

@@ -27,7 +27,7 @@ var {Map} = Immutable;
 
 function convertFromRawToContentBlock(
   block: RawDraftContentBlock,
-  entityMap: {[key: string]: RawDraftEntity}
+  entityMap: {[key: string]: RawDraftEntity},
 ): ContentBlock {
   var fromStorageToLocal = {};
 
@@ -38,7 +38,7 @@ function convertFromRawToContentBlock(
       var {type, mutability, data} = encodedEntity;
       var newKey = DraftEntity._create(type, mutability, data || {});
       fromStorageToLocal[storageKey] = newKey;
-    }
+    },
   );
   var {
     key,
@@ -50,6 +50,7 @@ function convertFromRawToContentBlock(
     data,
   } = block;
   key = key || generateRandomKey();
+  type = type || 'unstyled';
   depth = depth || 0;
   inlineStyleRanges = inlineStyleRanges || [];
   entityRanges = entityRanges || [];

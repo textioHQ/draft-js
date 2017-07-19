@@ -16,6 +16,7 @@ jest.disableAutomock();
 var CharacterMetadata = require('CharacterMetadata');
 var ContentBlock = require('ContentBlock');
 var ContentState = require('ContentState');
+var DraftModifier = require('DraftModifier');
 var EditorState = require('EditorState');
 var Immutable = require('immutable');
 var SelectionState = require('SelectionState');
@@ -158,6 +159,35 @@ describe('EditorState', () => {
         editor = RichTextEditorUtil.toggleBlockType(editor, 'test-block');
         expect(editor.getCurrentInlineStyle().toJS()).toEqual(['BOLD']);
       });
+
+      it('does not discard style override when adjusting depth', () => {
+        var editor = EditorState.createEmpty();
+
+        editor = RichTextEditorUtil.toggleInlineStyle(editor, 'BOLD');
+        expect(editor.getCurrentInlineStyle().toJS()).toEqual(['BOLD']);
+
+        editor = RichTextEditorUtil.onTab(
+          { preventDefault: () => {} },
+          editor,
+          1,
+        );
+        expect(editor.getCurrentInlineStyle().toJS()).toEqual(['BOLD']);
+      });
+
+      it('does not discard style override when splitting block', () => {
+        var editor = EditorState.createEmpty();
+
+        editor = RichTextEditorUtil.toggleInlineStyle(editor, 'BOLD');
+        expect(editor.getCurrentInlineStyle().toJS()).toEqual(['BOLD']);
+
+        var contentState = DraftModifier.splitBlock(
+          editor.getCurrentContent(),
+          editor.getSelection(),
+        );
+
+        editor = EditorState.push(editor, contentState, 'split-block');
+        expect(editor.getCurrentInlineStyle().toJS()).toEqual(['BOLD']);
+      });
     });
 
     describe('Non-collapsed selection', () => {
@@ -207,7 +237,7 @@ describe('EditorState', () => {
             focusKey: 'c',
             focusOffset: 3,
             isBackward: false,
-          })
+          }),
         );
         expect(editor.getCurrentInlineStyle()).toBe(NONE);
       });
@@ -261,16 +291,25 @@ describe('EditorState', () => {
 
       // Preserve block trees that had the same decorator list.
       expect(
-        editorState.getBlockTree(boldBlock.getKey())
+        editorState.getBlockTree(boldBlock.getKey()),
       ).toBe(
-        withNewDecorator.getBlockTree(boldBlock.getKey())
+        withNewDecorator.getBlockTree(boldBlock.getKey()),
       );
 
       expect(
-        editorState.getBlockTree(italicBlock.getKey())
+        editorState.getBlockTree(italicBlock.getKey()),
       ).not.toBe(
-        withNewDecorator.getBlockTree(italicBlock.getKey())
+        withNewDecorator.getBlockTree(italicBlock.getKey()),
       );
+    });
+
+    it('must call decorator with correct argument types and order', () => {
+      var decorator = new Decorator();
+      getDecoratedEditorState(decorator);
+      decorator.getDecorations.mock.calls.forEach((call) => {
+        expect(call[0] instanceof ContentBlock).toBe(true);
+        expect(call[1] instanceof ContentState).toBe(true);
+      });
     });
 
     it('must correctly remove a decorator', () => {
