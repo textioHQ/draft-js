@@ -20,7 +20,7 @@ import type {EntityMap} from 'EntityMap';
 /**
  * Return the entity key that should be used when inserting text for the
  * specified target selection, only if the entity is `MUTABLE`. `IMMUTABLE`
- * and `SEGMENTED` entities should not be used for insertion behavior.
+ * `SEGMENTED`, and `PLAIN` entities should not be used for insertion behavior.
  */
 function getEntityKeyForSelection(
   contentState: ContentState,
