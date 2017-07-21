@@ -84,6 +84,8 @@ function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
   // down, and type a character without React registering it. Let's sync the selection manually now.
   editOnSelect(editor);
 
+  const editorState = editor._latestEditorState;
+
   var chars = e.data;
 
   // In some cases (ex: IE ideographic space insertion) no character data
