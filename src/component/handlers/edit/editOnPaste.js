@@ -127,6 +127,7 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
 
 function handleTextualPaste(editor, text, html) {
   let textBlocks: Array<string> = [];
+  const editorState = editor._latestEditorState;
 
   if (
     editor.props.handlePastedText &&
