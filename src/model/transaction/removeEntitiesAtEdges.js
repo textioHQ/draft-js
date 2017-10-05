@@ -100,8 +100,7 @@ function removeForBlock(
 
   if (entityAfterCursor && entityAfterCursor === entityBeforeCursor) {
     var entity = entityMap.__get(entityAfterCursor);
-    var mutability = entity.getMutability();
-    if (mutability !== 'MUTABLE' && mutability !== 'PLAIN') {
+    if (entity.getMutability() !== 'MUTABLE') {
       var {start, end} = getRemovalRange(chars, entityAfterCursor, offset);
       var current;
       while (start < end) {

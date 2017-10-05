@@ -72,12 +72,6 @@ describe('removeEntitiesAtEdges', () => {
         expectSameBlockMap(contentState, result);
       });
 
-      it('must not remove plain entities', () => {
-        setEntityMutability('PLAIN');
-        var result = removeEntitiesAtEdges(contentState, selectionOnEntity);
-        expectSameBlockMap(contentState, result);
-      });
-
       it('must remove immutable entities', () => {
         setEntityMutability('IMMUTABLE');
         var result = removeEntitiesAtEdges(contentState, selectionOnEntity);

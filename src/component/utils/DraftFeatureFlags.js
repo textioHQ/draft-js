@@ -13,7 +13,7 @@
 'use strict';
 
 var DraftFeatureFlags = {
-  draft_killswitch_allow_nontextnodes: false,
+  draft_killswitch_allow_nontextnodes: true,
   draft_segmented_entities_behavior: false,
 };
 
