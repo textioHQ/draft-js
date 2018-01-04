@@ -80,8 +80,9 @@ function replaceText(
  */
 function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
 
-  // React doesn't fire a selection event until mouseUp, so it's possible to click to change selection, hold the mouse
-  // down, and type a character without React registering it. Let's sync the selection manually now.
+  // React doesn't fire a selection event until mouseUp, so it's possible to
+  // click to change selection, hold the mouse down, and type a character
+  // without React registering it. Let's sync the selection manually now.
   editOnSelect(editor);
 
   const editorState = editor._latestEditorState;
@@ -111,6 +112,7 @@ function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
   // reduces re-renders and preserves spellcheck highlighting. If the selection
   // is not collapsed, we will re-render.
   var selection = editorState.getSelection();
+  var anchorKey = selection.getAnchorKey();
 
   if (!selection.isCollapsed()) {
     e.preventDefault();
@@ -128,8 +130,6 @@ function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
     return;
   }
 
-  var mayAllowNative = !isSelectionAtLeafStart(editorState);
-
   var newEditorState = replaceText(
     editorState,
     chars,
@@ -140,66 +140,97 @@ function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
     ),
   );
 
-  if (!mayAllowNative) {
+  // Bunch of different cases follow where we need to prevent native insertion.
+  let mustPreventNative = false;
+  if (!mustPreventNative) {
+    // Browsers tend to insert text in weird places in the DOM when typing at
+    // the start of a leaf, so we'll handle it ourselves.
+    mustPreventNative = isSelectionAtLeafStart(
+      editor._latestCommittedEditorState,
+    );
+  }
+  if (!mustPreventNative) {
+    // Chrome will also split up a node into two pieces if it contains a Tab
+    // char, for no explicable reason. Seemingly caused by this commit:
+    // https://chromium.googlesource.com/chromium/src/+/013ac5eaf3%5E%21/
+    const nativeSelection = global.getSelection();
+    // Selection is necessarily collapsed at this point due to earlier check.
+    if (
+      nativeSelection.anchorNode !== null &&
+      nativeSelection.anchorNode.nodeType === Node.TEXT_NODE
+    ) {
+      // See isTabHTMLSpanElement in chromium EditingUtilities.cpp.
+      const parentNode = nativeSelection.anchorNode.parentNode;
+      mustPreventNative =
+        parentNode.nodeName === 'SPAN' &&
+        parentNode.firstChild.nodeType === Node.TEXT_NODE &&
+        parentNode.firstChild.nodeValue.indexOf('\t') !== -1;
+    }
+  }
+  if (!mustPreventNative) {
+    // Check the old and new "fingerprints" of the current block to determine
+    // whether this insertion requires any addition or removal of text nodes,
+    // in which case we would prevent the native character insertion.
+    var originalFingerprint = BlockTree.getFingerprint(
+      editorState.getBlockTree(anchorKey),
+    );
+    var newFingerprint = BlockTree.getFingerprint(
+      newEditorState.getBlockTree(anchorKey),
+    );
+    mustPreventNative = originalFingerprint !== newFingerprint;
+  }
+  if (!mustPreventNative) {
+    mustPreventNative = mustPreventDefaultForCharacter(chars);
+  }
+  if (!mustPreventNative) {
+    mustPreventNative =
+      nullthrows(newEditorState.getDirectionMap()).get(anchorKey) !==
+      nullthrows(editorState.getDirectionMap()).get(anchorKey);
+  }
+
+  if (mustPreventNative) {
     e.preventDefault();
     editor.update(newEditorState);
     return;
   }
 
-  var anchorKey = selection.getAnchorKey();
-  var anchorTree = editorState.getBlockTree(anchorKey);
+  // We made it all the way! Let the browser do its thing and insert the char.
+  newEditorState = EditorState.set(newEditorState, {
+    nativelyRenderedContent: newEditorState.getCurrentContent(),
+  });
 
-  // Check the old and new "fingerprints" of the current block to determine
-  // whether this insertion requires any addition or removal of text nodes,
-  // in which case we would prevent the native character insertion.
-  var originalFingerprint = BlockTree.getFingerprint(anchorTree);
-  var newFingerprint = BlockTree.getFingerprint(
-    newEditorState.getBlockTree(anchorKey),
-  );
-
-  if (
-    mustPreventDefaultForCharacter(chars) ||
-    originalFingerprint !== newFingerprint ||
-    (
-      nullthrows(newEditorState.getDirectionMap()).get(anchorKey) !==
-      nullthrows(editorState.getDirectionMap()).get(anchorKey)
-    )
-  ) {
-    e.preventDefault();
-    editor.update(newEditorState);
-  } else {
-    newEditorState = EditorState.set(newEditorState, {
-      nativelyRenderedContent: newEditorState.getCurrentContent(),
-    });
-
-    editor._updatedNativeInsertionBlock = editorState.getCurrentContent().getBlockForKey(
-      editorState.getSelection().getAnchorKey()
+  editor._updatedNativeInsertionBlock = editorState.getCurrentContent()
+    .getBlockForKey(
+      editorState.getSelection().getAnchorKey(),
     );
 
-    // Allow the native insertion to occur and update our internal state
-    // to match. If editor.update() does something like changing a typed
-    // 'x' to 'abc' in an onChange() handler, we don't want our editOnInput()
-    // logic to squash that change in favor of the typed 'x'. Set a flag to
-    // ignore the next editOnInput() event in favor of what's in our internal state.
-    editor.update(newEditorState, true);
+  // Allow the native insertion to occur and update our internal state to match.
+  // If editor.update() does something like changing a typed 'x' to 'abc' in an
+  // onChange() handler, we don't want our editOnInput() logic to squash that
+  // change in favor of the typed 'x'. Set a flag to ignore the next
+  // editOnInput() event in favor of what's in our internal state.
+  editor.update(newEditorState, true);
 
-    var editorStateAfterUpdate = editor._latestEditorState;
-    var contentStateAfterUpdate = editorStateAfterUpdate.getCurrentContent();
-    var expectedContentStateAfterUpdate = editorStateAfterUpdate.getNativelyRenderedContent();
+  var editorStateAfterUpdate = editor._latestEditorState;
+  var contentStateAfterUpdate = editorStateAfterUpdate.getCurrentContent();
+  var expectedContentStateAfterUpdate = editorStateAfterUpdate
+    .getNativelyRenderedContent();
 
-    if (expectedContentStateAfterUpdate && expectedContentStateAfterUpdate === contentStateAfterUpdate) {
-      if (isIE) {
-        setImmediate(() => {
-          editOnInput(editor);
-        });
-      }
-    } else {
-      // Outside callers (via the editor.onChange prop) have changed the editorState
-      // No longer allow native insertion.
-      e.preventDefault();
-      editor._updatedNativeInsertionBlock = null;
-      editor._renderNativeContent = false;
+  if (
+    expectedContentStateAfterUpdate &&
+    expectedContentStateAfterUpdate === contentStateAfterUpdate
+  ) {
+    if (isIE) {
+      setImmediate(() => {
+        editOnInput(editor);
+      });
     }
+  } else {
+    // Outside callers (via the editor.onChange prop) have changed the
+    // editorState. No longer allow native insertion.
+    e.preventDefault();
+    editor._updatedNativeInsertionBlock = null;
+    editor._renderNativeContent = false;
   }
 }
 
