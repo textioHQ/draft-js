@@ -12,11 +12,12 @@
 
 'use strict';
 
+import type DraftEditor from 'DraftEditor.react';
+
 const DraftFeatureFlags = require('DraftFeatureFlags');
 var DraftModifier = require('DraftModifier');
 var DraftOffsetKey = require('DraftOffsetKey');
 var EditorState = require('EditorState');
-var UserAgent = require('UserAgent');
 
 var editOnSelect = require('editOnSelect');
 var EditorBidiService = require('EditorBidiService');
@@ -24,7 +25,6 @@ var EditorBidiService = require('EditorBidiService');
 var findAncestorOffsetKey = require('findAncestorOffsetKey');
 var nullthrows = require('nullthrows');
 
-import type DraftEditor from 'DraftEditor.react';
 
 var DOUBLE_NEWLINE = '\n\n';
 

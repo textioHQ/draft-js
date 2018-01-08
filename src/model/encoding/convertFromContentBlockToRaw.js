@@ -12,13 +12,13 @@
 
 'use strict';
 
+import type ContentBlock from 'ContentBlock';
+import type {RawDraftContentBlock} from 'RawDraftContentBlock';
+
 var DraftStringKey = require('DraftStringKey');
 
 var encodeEntityRanges = require('encodeEntityRanges');
 var encodeInlineStyleRanges = require('encodeInlineStyleRanges');
-
-import type ContentBlock from 'ContentBlock';
-import type {RawDraftContentBlock} from 'RawDraftContentBlock';
 
 function convertFromContentBlockToRaw(
   block: ContentBlock,

@@ -12,6 +12,8 @@
 
 'use strict';
 
+import type {RawDraftContentBlock} from 'RawDraftContentBlock';
+
 var ContentBlock = require('ContentBlock');
 var DraftEntity = require('DraftEntity');
 
@@ -20,8 +22,6 @@ var decodeEntityRanges = require('decodeEntityRanges');
 var decodeInlineStyleRanges = require('decodeInlineStyleRanges');
 var generateRandomKey = require('generateRandomKey');
 var Immutable = require('immutable');
-
-import type {RawDraftContentBlock} from 'RawDraftContentBlock';
 
 var {Map} = Immutable;
 

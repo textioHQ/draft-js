@@ -12,10 +12,9 @@
 
 'use strict';
 
-var getFragmentFromSelection = require('getFragmentFromSelection');
-
 import type DraftEditor from 'DraftEditor.react';
 
+var getFragmentFromSelection = require('getFragmentFromSelection');
 var setClipboardData = require('setClipboardData');
 
 /**

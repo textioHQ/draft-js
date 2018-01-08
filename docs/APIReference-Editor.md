@@ -249,6 +249,7 @@ onUpArrow?: (e: SyntheticKeyboardEvent) => void
 ```
 onDownArrow?: (e: SyntheticKeyboardEvent) => void
 ```
+### Mouse events
 
 ### Mouse events
 
