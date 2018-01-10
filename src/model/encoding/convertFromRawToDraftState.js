@@ -12,11 +12,11 @@
 
 'use strict';
 
+import type {RawDraftContentState} from 'RawDraftContentState';
+
 var ContentState = require('ContentState');
 
 var convertFromRawToContentBlock = require('convertFromRawToContentBlock');
-
-import type {RawDraftContentState} from 'RawDraftContentState';
 
 function convertFromRawToDraftState(
   rawState: RawDraftContentState,

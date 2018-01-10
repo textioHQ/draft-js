@@ -12,6 +12,10 @@
 
 'use strict';
 
+import type {BlockMap} from 'BlockMap';
+import type DraftEditor from 'DraftEditor.react';
+import type {EntityMap} from 'EntityMap';
+
 var BlockMapBuilder = require('BlockMapBuilder');
 var CharacterMetadata = require('CharacterMetadata');
 var DataTransfer = require('DataTransfer');
@@ -25,10 +29,6 @@ const isEventHandled = require('isEventHandled');
 var splitTextIntoTextBlocks = require('splitTextIntoTextBlocks');
 var setImmediate = require('setImmediate');
 var UserAgent = require('UserAgent');
-
-import type DraftEditor from 'DraftEditor.react';
-import type {BlockMap} from 'BlockMap';
-import type {EntityMap} from 'EntityMap';
 
 /**
  * Paste content.

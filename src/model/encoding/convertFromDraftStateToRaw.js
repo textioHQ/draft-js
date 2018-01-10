@@ -12,10 +12,11 @@
 
 'use strict';
 
-var DraftStringKey = require('DraftStringKey');
-
 import type ContentState from 'ContentState';
 import type {RawDraftContentState} from 'RawDraftContentState';
+
+var DraftStringKey = require('DraftStringKey');
+
 import convertFromContentBlockToRaw from 'convertFromContentBlockToRaw';
 
 function convertFromDraftStateToRaw(

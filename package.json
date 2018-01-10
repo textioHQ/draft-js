@@ -32,7 +32,7 @@
     "revbeta": "sh ./make_beta.sh && npm version prerelease && git push --follow-tags"
   },
   "dependencies": {
-    "fbjs": "^0.8.7",
+    "fbjs": "^0.8.12",
     "immutable": "~3.7.4",
     "object-assign": "^4.1.0"
   },
