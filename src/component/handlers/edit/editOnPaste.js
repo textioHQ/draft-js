@@ -110,11 +110,13 @@ function editOnPaste(editor: DraftEditor, e: DOMEvent): void {
     // It is important to call setMode('paste') to disable the editor's event handlers (so it is blisfully unaware)
     // and then to properly undo the sleight-of-hand created.
     editor.setMode('paste');
+    const selection = editor._latestEditorState.getSelection();
     const pasteTrap = editor._pasteTrap;
     pasteTrap.focus();
     setImmediate(() => {
       html = pasteTrap.innerHTML;
       editor.focus();
+      editor.update(EditorState.forceSelection(editor._latestEditorState, selection));
       pasteTrap.innerHTML = '';
       editor.exitCurrentMode();
       handleTextualPaste(editor, text, html);
