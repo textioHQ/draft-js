@@ -30,6 +30,7 @@ type Props = {
   blockStyleFn: (block: ContentBlock) => string,
   editorState: EditorState,
   textDirectionality?: BidiDirection,
+  diffState: React.PropTypes.object,
 };
 
 /**
@@ -98,6 +99,7 @@ class DraftEditorContents extends React.Component {
       customStyleMap,
       customStyleFn,
       editorState,
+	  diffState,
     } = this.props;
 
     const content = editorState.getCurrentContent();
@@ -112,6 +114,7 @@ class DraftEditorContents extends React.Component {
     let lastWrapperTemplate = null;
 
     for (let ii = 0; ii < blocksAsArray.length; ii++) {
+        console.log(diffState);
       const block = blocksAsArray[ii];
       const key = block.getKey();
       const blockType = block.getType();

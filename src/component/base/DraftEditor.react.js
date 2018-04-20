@@ -343,6 +343,7 @@ class DraftEditor extends React.Component {
               editorState={this.props.editorState}
               key={'contents' + this.state.contentsKey}
               textDirectionality={this.props.textDirectionality}
+              diffState={this.props.diffState}
             />
           </div>
         </div>
@@ -387,6 +388,7 @@ class DraftEditor extends React.Component {
   componentWillUpdate(nextProps: DraftEditorProps): void {
     this._blockSelectEvents = true;
     this._latestEditorState = nextProps.editorState;
+	this._latestDiffState = nextProps.diffState;
   }
 
   componentDidUpdate(): void {
