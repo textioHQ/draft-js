@@ -344,9 +344,6 @@ function genFragment(
   // Base Case
   if (nodeName === '#text') {
     var text = node.textContent;
-    if (text.trim() === '' && inBlock !== 'pre') {
-      return {chunk: getWhitespaceChunk(inEntity), entityMap};
-    }
     if (inBlock !== 'pre') {
       // Can't use empty string because MSWord
       text = text.replace(REGEX_LF, SPACE);
