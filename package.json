@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.10.59-topic-preserve-whitespace-text-nodes.0",
+  "version": "0.10.59-topic-preserve-whitespace-text-nodes.1",
   "keywords": [
     "draftjs",
     "editor",
