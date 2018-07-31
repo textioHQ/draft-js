@@ -110,6 +110,7 @@ class DraftEditorContents extends React.Component {
     const processedBlocks = [];
     let currentDepth = null;
     let lastWrapperTemplate = null;
+    let lastCustomWrapperTemplate = null;
 
     for (let ii = 0; ii < blocksAsArray.length; ii++) {
       const block = blocksAsArray[ii];
@@ -146,7 +147,7 @@ class DraftEditorContents extends React.Component {
       };
 
       const configForType = blockRenderMap.get(blockType);
-      const wrapperTemplate = customWrapperTemplate || configForType.wrapper;
+      const wrapperTemplate = configForType.wrapper;
 
       const Element = (
         configForType.element ||
@@ -161,6 +162,7 @@ class DraftEditorContents extends React.Component {
       if (Element === 'li') {
         const shouldResetCount = (
           lastWrapperTemplate !== wrapperTemplate ||
+          lastCustomWrapperTemplate !== customWrapperTemplate ||
           currentDepth === null ||
           depth > currentDepth
         );
@@ -197,21 +199,80 @@ class DraftEditorContents extends React.Component {
         wrapperTemplate,
         key,
         offsetKey,
+        draftWrapperTemplate: configForType.wrapper,
+        customWrapperTemplate: customWrapperTemplate,
       });
 
-      if (wrapperTemplate) {
+      if (draftWrapperTemplate || customWrapperTemplate) {
         currentDepth = block.getDepth();
       } else {
         currentDepth = null;
       }
       lastWrapperTemplate = wrapperTemplate;
+      lastCustomWrapperTemplate = customWrapperTemplate;
     }
 
-    // Group contiguous runs of blocks that have the same wrapperTemplate
+    // Group contigious runs of blocks
     const outputBlocks = [];
-    for (let ii = 0; ii < processedBlocks.length; ) {
+    for (let ii = 0; ii < processedBlocks.length;) {
       const info = processedBlocks[ii];
-      if (info.wrapperTemplate) {
+
+      // Group by customWrapperTemplate (if exists)
+      // Note: If we ever want to remove customWrapperTemplates, remove this if block
+      if (info.customWrapperTemplate) {
+        // Group by custom template
+        const blocksGroupedByCustomTemplate = [];
+        do {
+          blocksGroupedByCustomTemplate.push(processedBlocks[ii]);
+          ii++;
+        } while (
+          ii < processedBlocks.length &&
+          processedBlocks[ii].customWrapperTemplate == info.customWrapperTemplate
+        );
+
+        // After grouping by customWrapperTemplate, 
+        // group those blocks by draftjs wrapper template
+        const blocksGroupedByDraftWrapperTemplate = [];
+        for (let j = 0; j < blocksGroupedByCustomTemplate.length;) {
+          const blocksGroupedByCustomTemplateAndDraftTemplate = [];
+          const baseCustomTemplateBlock = blocksGroupedByCustomTemplate[j];
+          if (baseCustomTemplateBlock.draftWrapperTemplate) {
+            do {
+              blocksGroupedByCustomTemplateAndDraftTemplate.push(blocksGroupedByCustomTemplate[j].block);
+              j++;
+            } while (
+              j < blocksGroupedByCustomTemplate.length &&
+              blocksGroupedByCustomTemplate[j].draftWrapperTemplate === baseCustomTemplateBlock.draftWrapperTemplate
+            );
+            const draftWrapperElement = React.cloneElement(
+              baseCustomTemplateBlock.draftWrapperTemplate,
+              {
+                key: baseCustomTemplateBlock.key + '-wrap',
+                'data-offset-key': baseCustomTemplateBlock.offsetKey,
+              },
+              blocksGroupedByCustomTemplateAndDraftTemplate,
+            );
+            blocksGroupedByDraftWrapperTemplate.push(draftWrapperElement);
+          } else {
+            blocksGroupedByDraftWrapperTemplate.push(baseCustomTemplateBlock.block);
+            j++;
+          }
+        }
+
+        // Finally wrap the grouped draftwrappertemplate elements into the customTemplateWrapper
+        const customWrapperElement = React.cloneElement(
+          info.customWrapperTemplate,
+          {
+            key: info.key + '-custom-wrap',
+            'data-offset-key': info.offsetKey,
+          },
+          blocksGroupedByDraftWrapperTemplate,
+        );
+        outputBlocks.push(customWrapperElement);
+      }
+      // If there's only a draftWrapperTemplate, only group by that 
+      // (draftjs original logic)
+      else if (info.draftWrapperTemplate) {
         const blocks = [];
         do {
           blocks.push(processedBlocks[ii].block);
