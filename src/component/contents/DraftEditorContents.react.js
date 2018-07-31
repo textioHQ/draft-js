@@ -234,27 +234,28 @@ class DraftEditorContents extends React.Component {
         // group those blocks by draftjs wrapper template
         const blocksGroupedByDraftWrapperTemplate = [];
         for (let j = 0; j < blocksGroupedByCustomTemplate.length;) {
-          const blocksGroupedByCustomTemplateAndDraftTemplate = [];
-          const baseCustomTemplateBlock = blocksGroupedByCustomTemplate[j];
-          if (baseCustomTemplateBlock.draftWrapperTemplate) {
+          const blocksGroupedByDraftWrapper = [];
+          const customWrapperBlock = blocksGroupedByCustomTemplate[j];
+          // Wrap by draft's internal wrapper if exists (li's for example)
+          if (customWrapperBlock.draftWrapperTemplate) {
             do {
-              blocksGroupedByCustomTemplateAndDraftTemplate.push(blocksGroupedByCustomTemplate[j].block);
+              blocksGroupedByDraftWrapper.push(blocksGroupedByCustomTemplate[j].block);
               j++;
             } while (
               j < blocksGroupedByCustomTemplate.length &&
-              blocksGroupedByCustomTemplate[j].draftWrapperTemplate === baseCustomTemplateBlock.draftWrapperTemplate
+              blocksGroupedByCustomTemplate[j].draftWrapperTemplate === customWrapperBlock.draftWrapperTemplate
             );
             const draftWrapperElement = React.cloneElement(
-              baseCustomTemplateBlock.draftWrapperTemplate,
+              customWrapperBlock.draftWrapperTemplate,
               {
-                key: baseCustomTemplateBlock.key + '-wrap',
-                'data-offset-key': baseCustomTemplateBlock.offsetKey,
+                key: customWrapperBlock.key + '-wrap',
+                'data-offset-key': customWrapperBlock.offsetKey,
               },
-              blocksGroupedByCustomTemplateAndDraftTemplate,
+              blocksGroupedByDraftWrapper,
             );
             blocksGroupedByDraftWrapperTemplate.push(draftWrapperElement);
           } else {
-            blocksGroupedByDraftWrapperTemplate.push(baseCustomTemplateBlock.block);
+            blocksGroupedByDraftWrapperTemplate.push(customWrapperBlock.block);
             j++;
           }
         }
