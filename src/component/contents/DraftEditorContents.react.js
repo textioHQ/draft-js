@@ -214,19 +214,26 @@ class DraftEditorContents extends React.Component {
       lastCustomWrapperTemplate = customWrapperTemplate;
     }
 
+    // Note on code below:
+    // processedBlocks will contain all merged blocks
+    // For example: header blocks,body blocks,and footer blocks will be merged into processedBlocks (in order)
+    // We need to manually group by type (header,body,footer) and apply any custom wrapper.
+    // Then we need group those blocks (i.e. header blocks) by any specific wrapping needed internally by Draft (wrapping <li>'s in a <ul>)
+    // We then put everything back together at the end (outputBlocks)
+
     // Group contiguous runs of blocks
     const outputBlocks = [];
     for (let ii = 0; ii < processedBlocks.length;) {
       const info = processedBlocks[ii];
 
       // Group by customWrapperTemplate (if exists)
-      // Note: If we ever want to remove customWrapperTemplates, remove this if block
-      // customWrapperTemplate will always wrap the internal wrapperTemplate
+      // Note: If we ever want to remove customWrapperTemplates, remove this block
+      // customWrapperTemplate will also wrap the internal wrapperTemplate by default
       if (info.customWrapperTemplate) {
         // Group by custom template
-        const blocksGroupedByCustomWrapper = [];
+        const blocksInCustomWrapper = [];
         do {
-          blocksGroupedByCustomWrapper.push(processedBlocks[ii]);
+          blocksInCustomWrapper.push(processedBlocks[ii]);
           ii++;
         } while (
           ii < processedBlocks.length &&
@@ -235,31 +242,31 @@ class DraftEditorContents extends React.Component {
 
         // After grouping by customWrapperTemplate, 
         // group those blocks by wrapperTemplate (internal wrapper)
-        const blocksGroupedByInternalWrapper = [];
-        for (let j = 0; j < blocksGroupedByCustomWrapper.length;) {
+        const blocksInInternalWrapper = [];
+        for (let jj = 0; jj < blocksInCustomWrapper.length;) {
           const accum = [];
-          const infoBlock = blocksGroupedByCustomWrapper[j];
+          const blockRef = blocksInCustomWrapper[jj];
 
-          if (infoBlock.wrapperTemplate) {
+          if (blockRef.wrapperTemplate) {
             do {
-              accum.push(blocksGroupedByCustomWrapper[j].block);
-              j++;
+              accum.push(blocksInCustomWrapper[jj].block);
+              jj++;
             } while (
-              j < blocksGroupedByCustomWrapper.length &&
-              blocksGroupedByCustomWrapper[j].wrapperTemplate === infoBlock.wrapperTemplate
+              jj < blocksInCustomWrapper.length &&
+              blocksInCustomWrapper[jj].wrapperTemplate === blockRef.wrapperTemplate
             );
             const internalWrapperElement = React.cloneElement(
-              infoBlock.wrapperTemplate,
+              blockRef.wrapperTemplate,
               {
-                key: infoBlock.key + '-wrap',
-                'data-offset-key': infoBlock.offsetKey,
+                key: blockRef.key + '-wrap',
+                'data-offset-key': blockRef.offsetKey,
               },
               accum,
             );
-            blocksGroupedByInternalWrapper.push(internalWrapperElement);
+            blocksInInternalWrapper.push(internalWrapperElement);
           } else {
-            blocksGroupedByInternalWrapper.push(infoBlock.block);
-            j++;
+            blocksInInternalWrapper.push(blockRef.block);
+            jj++;
           }
         }
 
@@ -270,12 +277,12 @@ class DraftEditorContents extends React.Component {
             key: info.key + '-custom-wrap',
             'data-offset-key': info.offsetKey,
           },
-          blocksGroupedByInternalWrapper,
+          blocksInInternalWrapper,
         );
         outputBlocks.push(customWrapperElement);
       }
       // If there's only a wrapperTemplate (internal wrapper), only group by that 
-      else if (info.internalWrapperTemplate) {
+      else if (info.wrapperTemplate) {
         const blocks = [];
         do {
           blocks.push(processedBlocks[ii].block);
