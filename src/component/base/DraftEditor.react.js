@@ -167,6 +167,7 @@ class DraftEditor extends React.Component {
     this.getClipboard = this._getClipboard.bind(this);
     this.getEditorKey = () => this._editorKey;
     this.update = this._update.bind(this);
+    this.silentlyUpdate = this._silentlyUpdate.bind(this);
     this.onDragEnter = this._onDragEnter.bind(this);
     this.onDragLeave = this._onDragLeave.bind(this);
 
@@ -425,6 +426,17 @@ class DraftEditor extends React.Component {
   _update(editorState: EditorState): void {
     this._latestEditorState = editorState;
     this.props.onChange(editorState);
+  }
+
+  /**
+   * If changes to upstream editor state are triggered by Draft *plugins*, they
+   * bypass `this.update` (which updates `this._latestEditorState`). However,
+   * `@textio/editor` treats `this._latestEditorState` as a source of truth. To
+   * avoid getting out of sync, plugins/editor can call `this._silentlyUpdate`
+   * after updating state.
+   */
+  _silentlyUpdate(editorState: EditorState): void {
+    this._latestEditorState = editorState;
   }
 
   /**
