@@ -435,17 +435,15 @@ class EditorState {
       editorState.getDirectionMap(),
     );
 
-    return EditorState.set(editorState, {
+    var newEditorState = EditorState.set(editorState, {
       currentContent: newCurrentContent,
       directionMap,
       undoStack: undoStack.shift(),
       redoStack: editorState.getRedoStack().push(currentContent),
-      forceSelection: true,
-      inlineStyleOverride: null,
       lastChangeType: 'undo',
-      nativelyRenderedContent: null,
-      selection: currentContent.getSelectionBefore(),
     });
+
+    return EditorState.forceSelection(newEditorState, currentContent.getSelectionBefore());
   }
 
   /**
@@ -469,17 +467,15 @@ class EditorState {
       editorState.getDirectionMap(),
     );
 
-    return EditorState.set(editorState, {
+    var newEditorState = EditorState.set(editorState, {
       currentContent: newCurrentContent,
       directionMap,
       undoStack: editorState.getUndoStack().push(currentContent),
       redoStack: redoStack.shift(),
-      forceSelection: true,
-      inlineStyleOverride: null,
       lastChangeType: 'redo',
-      nativelyRenderedContent: null,
-      selection: newCurrentContent.getSelectionAfter(),
     });
+
+    return EditorState.forceSelection(newEditorState, newCurrentContent.getSelectionAfter());
   }
 
   /**
