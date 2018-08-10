@@ -14,6 +14,11 @@
 
 'use strict';
 
+import type {BlockMap} from 'BlockMap';
+import type {DraftEditorModes} from 'DraftEditorModes';
+import type {DraftEditorDefaultProps, DraftEditorProps} from 'DraftEditorProps';
+import type {DraftScrollPosition} from 'DraftScrollPosition';
+
 const DefaultDraftBlockRenderMap = require('DefaultDraftBlockRenderMap');
 const DefaultDraftInlineStyle = require('DefaultDraftInlineStyle');
 const DraftEditorCompositionHandler = require('DraftEditorCompositionHandler');
@@ -32,13 +37,11 @@ const cx = require('cx');
 const emptyFunction = require('emptyFunction');
 const generateRandomKey = require('generateRandomKey');
 const getDefaultKeyBinding = require('getDefaultKeyBinding');
-const nullthrows = require('nullthrows');
-const getScrollPosition = require('getScrollPosition');
+const editOnSelect = require('editOnSelect');
 
-import type {BlockMap} from 'BlockMap';
-import type {DraftEditorModes} from 'DraftEditorModes';
-import type {DraftEditorProps, DraftEditorDefaultProps} from 'DraftEditorProps';
-import type {DraftScrollPosition} from 'DraftScrollPosition';
+const getScrollPosition = require('getScrollPosition');
+const invariant = require('invariant');
+const nullthrows = require('nullthrows');
 
 const isIE = UserAgent.isBrowser('IE');
 
@@ -53,7 +56,9 @@ const handlerMap = {
   'composite': DraftEditorCompositionHandler,
   'drag': DraftEditorDragHandler,
   'cut': null,
+  'copy': null,
   'render': null,
+  'paste': null,
 };
 
 type State = {
@@ -85,9 +90,12 @@ class DraftEditor extends React.Component {
   _dragCount: number;
   _internalDrag: boolean;
   _editorKey: string;
+  _editor: React.Element<any>;
   _placeholderAccessibilityID: string;
   _latestEditorState: EditorState;
-  _pendingStateFromBeforeInput: void | EditorState;
+  _renderNativeContent: boolean;
+  _updatedNativeInsertionBlock: boolean;
+  _latestCommittedEditorState: EditorState;
 
   /**
    * Define proxies that can route events to the current handler.
@@ -132,9 +140,10 @@ class DraftEditor extends React.Component {
     this._clipboard = null;
     this._handler = null;
     this._dragCount = 0;
-    this._editorKey = generateRandomKey();
+    this._editorKey = props.editorKey || generateRandomKey();
     this._placeholderAccessibilityID = 'placeholder-' + this._editorKey;
     this._latestEditorState = props.editorState;
+    this._latestCommittedEditorState = props.editorState;
 
     this._onBeforeInput = this._buildHandler('onBeforeInput');
     this._onBlur = this._buildHandler('onBlur');
@@ -157,6 +166,8 @@ class DraftEditor extends React.Component {
     this._onPaste = this._buildHandler('onPaste');
     this._onSelect = this._buildHandler('onSelect');
 
+    this._setEditorRef = this._setEditorRef.bind(this);
+
     // Manual binding for public and internal methods.
     this.focus = this._focus.bind(this);
     this.blur = this._blur.bind(this);
@@ -167,6 +178,7 @@ class DraftEditor extends React.Component {
     this.getClipboard = this._getClipboard.bind(this);
     this.getEditorKey = () => this._editorKey;
     this.update = this._update.bind(this);
+    this.silentlyUpdate = this._silentlyUpdate.bind(this);
     this.onDragEnter = this._onDragEnter.bind(this);
     this.onDragLeave = this._onDragLeave.bind(this);
 
@@ -182,6 +194,14 @@ class DraftEditor extends React.Component {
   _buildHandler(eventName: string): Function {
     return (e) => {
       if (!this.props.readOnly) {
+        const method = this._handler && this._handler[eventName];
+        method && method(this, e);
+      } else if (eventName === 'onCopy') {
+        // React does not fire onSelect for readonly divs (aka non-content-editable divs). If a user
+        // selects some text and hits 'copy' nothing will be copied because the selectState contains
+        // nothing :( Call editOnSelect to force the actual DOM selection onto the editor and then
+        // allow the normal copy method to do its thing.
+        editOnSelect(this);
         const method = this._handler && this._handler[eventName];
         method && method(this, e);
       }
@@ -210,6 +230,27 @@ class DraftEditor extends React.Component {
     return null;
   }
 
+  _setEditorRef(ref: React.Element<any>): void {
+    // Unfortunately, due to https://github.com/facebook/react/issues/8909
+    // it is not possible to set up an onPaste handler through react.
+    // Manually use addEventListener and removeEventListener below.
+    // See the comments in editOnPaste for why this is needed.
+    if (this._editor) {
+      const editorNode = ReactDOM.findDOMNode(this._editor);
+      editorNode.removeEventListener('paste', this._onPaste);
+    }
+
+    this._editor = ref;
+    if (this._editor) {
+      const editorNode = ReactDOM.findDOMNode(this._editor);
+      editorNode.addEventListener('paste', this._onPaste);
+
+      // Add ignore attribute for an IESpell, an obscure plugin that doesn't respect spellcheck="false" on a
+      // contenteditable div
+      editorNode.setAttribute('ieSpell_ignored', 'true');
+    }
+  }
+
   render(): React.Element<any> {
     const {readOnly, textAlignment} = this.props;
     const rootClass = cx({
@@ -223,6 +264,16 @@ class DraftEditor extends React.Component {
       outline: 'none',
       whiteSpace: 'pre-wrap',
       wordWrap: 'break-word',
+    };
+
+    const trapDivStyle = {
+      maxWidth: '1px',
+      maxHeight: '1px',
+      overflow: 'hidden',
+      position: 'fixed',
+      opacity: '0.01',
+      left: '-999px',
+      top: '0px',
     };
 
     return (
@@ -243,7 +294,17 @@ class DraftEditor extends React.Component {
             aria-haspopup={readOnly ? null : this.props.ariaHasPopup}
             aria-label={this.props.ariaLabel}
             aria-owns={readOnly ? null : this.props.ariaOwneeID}
-            className={cx('public/DraftEditor/content')}
+            autoCapitalize={this.props.autoCapitalize}
+            autoComplete={this.props.autoComplete}
+            autoCorrect={this.props.autoCorrect}
+            className={cx({
+              // Chrome's built-in translation feature mutates the DOM in ways
+              // that Draft doesn't expect (ex: adding <font> tags inside
+              // DraftEditorLeaf spans) and causes problems. We add notranslate
+              // here which makes its autotranslation skip over this subtree.
+              'notranslate': !readOnly,
+              'public/DraftEditor/content': true,
+            })}
             contentEditable={!readOnly}
             data-testid={this.props.webDriverTestID}
             onBeforeInput={this._onBeforeInput}
@@ -264,9 +325,8 @@ class DraftEditor extends React.Component {
             onKeyPress={this._onKeyPress}
             onKeyUp={this._onKeyUp}
             onMouseUp={this._onMouseUp}
-            onPaste={this._onPaste}
             onSelect={this._onSelect}
-            ref="editor"
+            ref={this._setEditorRef}
             role={readOnly ? null : (this.props.role || 'textbox')}
             spellCheck={allowSpellCheck && this.props.spellCheck}
             style={contentStyle}
@@ -283,8 +343,21 @@ class DraftEditor extends React.Component {
               editorKey={this._editorKey}
               editorState={this.props.editorState}
               key={'contents' + this.state.contentsKey}
+              textDirectionality={this.props.textDirectionality}
             />
           </div>
+        </div>
+        <div
+          contentEditable={true}
+          style={trapDivStyle}
+          ref={ref => this._pasteTrap = ref }
+          suppressContentEditableWarning>
+        </div>
+        <div
+          contentEditable={true}
+          style={trapDivStyle}
+          ref={ref => this._copyTrap = ref }
+          suppressContentEditableWarning>
         </div>
       </div>
     );
@@ -319,6 +392,7 @@ class DraftEditor extends React.Component {
 
   componentDidUpdate(): void {
     this._blockSelectEvents = false;
+    this._latestCommittedEditorState = this.props.editorState;
   }
 
   /**
@@ -333,14 +407,34 @@ class DraftEditor extends React.Component {
    * scroll state and put it back in place after focus has been forced.
    */
   _focus(scrollPosition?: DraftScrollPosition): void {
-    const {editorState} = this.props;
+    const editorState = this._latestEditorState;
     const alreadyHasFocus = editorState.getSelection().getHasFocus();
-    const editorNode = ReactDOM.findDOMNode(this.refs.editor);
+    const editorNode = ReactDOM.findDOMNode(this._editor);
 
     const scrollParent = Style.getScrollParent(editorNode);
-    const {x, y} = scrollPosition || getScrollPosition(scrollParent);
+    const originalScrollPosition = getScrollPosition(scrollParent);
+    const originalMarginTop = Style.get(editorNode, 'marginTop');
+    const {x, y} = scrollPosition || originalScrollPosition;
 
+    if (isIE) {
+      // IE will briefly scroll a content editable element to the top and back
+      // when it is given focus programmatically. To account for this we must
+      // first scroll it to the top but pretend that it hasn't using the margin.
+      editorNode.style.marginTop = `${-originalScrollPosition.y}px`;
+      Scroll.setTop(scrollParent, 0);
+    }
+
+    invariant(
+      editorNode instanceof HTMLElement,
+      'editorNode is not an HTMLElement',
+    );
     editorNode.focus();
+
+    if (isIE) {
+      // Reset the margin
+      editorNode.style.marginTop = originalMarginTop;
+    }
+
     if (scrollParent === window) {
       window.scrollTo(x, y);
     } else {
@@ -355,14 +449,19 @@ class DraftEditor extends React.Component {
       this.update(
         EditorState.forceSelection(
           editorState,
-          editorState.getSelection()
-        )
+          editorState.getSelection(),
+        ),
       );
     }
   }
 
   _blur(): void {
-    ReactDOM.findDOMNode(this.refs.editor).blur();
+    const editorNode = ReactDOM.findDOMNode(this.refs.editor);
+    invariant(
+      editorNode instanceof HTMLElement,
+      'editorNode is not an HTMLElement',
+    );
+    editorNode.blur();
   }
 
   /**
@@ -422,9 +521,21 @@ class DraftEditor extends React.Component {
    * an `onChange` prop to receive state updates passed along from this
    * function.
    */
-  _update(editorState: EditorState): void {
+  _update(editorState: EditorState, renderNativeContent: boolean = false): void {
+    this._renderNativeContent = renderNativeContent;
     this._latestEditorState = editorState;
     this.props.onChange(editorState);
+  }
+
+  /**
+   * If changes to upstream editor state are triggered by Draft *plugins*, they
+   * bypass `this.update` (which updates `this._latestEditorState`). However,
+   * `@textio/editor` treats `this._latestEditorState` as a source of truth. To
+   * avoid getting out of sync, plugins/editor can call `this._silentlyUpdate`
+   * after updating state.
+   */
+  _silentlyUpdate(editorState: EditorState): void {
+    this._latestEditorState = editorState;
   }
 
   /**

@@ -57,6 +57,18 @@ to fit it within your UI design.
 If this value is not set, text alignment will be based on the characters within
 the editor, on a per-block basis.
 
+#### textDirectionality
+```
+textDirectionality?: DraftTextDirectionality
+```
+Optionally set the overriding text directionality for this editor. The values
+include 'RTL' for right-to-left text, like Hebrew or Arabic, and 'LTR' for
+left-to-right text, like English or Spanish. This directionality will apply to
+the entire contents, regardless of default text direction for input text.
+
+If this value is not set, text directionality will be based on the characters
+within the editor, on a per-block basis.
+
 #### blockRendererFn
 ```
 blockRendererFn?: (block: ContentBlock) => ?Object
@@ -136,6 +148,23 @@ Default is `false`.
 
 These props allow you to set accessibility properties on your editor. See
 [DraftEditorProps](https://github.com/facebook/draft-js/blob/master/src/component/base/DraftEditorProps.js) for the exhaustive list of supported attributes.
+
+#### editorKey
+```
+editorKey?: string
+```
+
+You probably won't set `editorKey` on an `<Editor />` manually unless you're
+rendering a Draft component serverside. If you _are_, you must set this prop
+to avoid server/client mismatches.
+
+If the key is not set, it is generated automatically when the component
+renders and assigned as a prop of the Editor's `<DraftEditorContents />`
+component.
+
+If you _do_ set this prop, the key should be unique _per-editor_, as it is
+used to determine if styles should be preserved when pasting text within an
+editor.
 
 ### Cancelable Handlers (Optional)
 
@@ -221,6 +250,17 @@ onUpArrow?: (e: SyntheticKeyboardEvent) => void
 onDownArrow?: (e: SyntheticKeyboardEvent) => void
 ```
 
+### Mouse events
+
+### onFocus
+```
+onFocus?: (e: SyntheticFocusEvent) => void
+```
+
+### onBlur
+```
+onBlur?: (e: SyntheticFocusEvent) => void
+```
 
 ## Methods
 

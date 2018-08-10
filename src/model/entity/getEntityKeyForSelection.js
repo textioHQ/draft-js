@@ -14,17 +14,17 @@
 'use strict';
 
 import type ContentState from 'ContentState';
-import type SelectionState from 'SelectionState';
 import type {EntityMap} from 'EntityMap';
+import type SelectionState from 'SelectionState';
 
 /**
  * Return the entity key that should be used when inserting text for the
  * specified target selection, only if the entity is `MUTABLE`. `IMMUTABLE`
- * and `SEGMENTED` entities should not be used for insertion behavior.
+ * `SEGMENTED`, and `PLAIN` entities should not be used for insertion behavior.
  */
 function getEntityKeyForSelection(
   contentState: ContentState,
-  targetSelection: SelectionState
+  targetSelection: SelectionState,
 ): ?string {
   var entityKey;
 
@@ -55,7 +55,7 @@ function getEntityKeyForSelection(
  */
 function filterKey(
   entityMap: EntityMap,
-  entityKey: ?string
+  entityKey: ?string,
 ): ?string {
   if (entityKey) {
     var entity = entityMap.__get(entityKey);

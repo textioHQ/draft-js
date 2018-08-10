@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.9.0",
+  "version": "0.10.64",
   "keywords": [
     "draftjs",
     "editor",
@@ -20,17 +20,20 @@
   "repository": "facebook/draft-js",
   "license": "BSD-3-Clause",
   "scripts": {
-    "prepublish": "npm run build",
+    "deploy": "npm run build && npm pack && s3-deploy *.tgz --region us-east-1 --bucket textio-web-deps",
     "pretest": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json",
     "build": "gulp",
     "postbuild": "node node_modules/fbjs-scripts/node/check-lib-requires.js lib",
     "lint": "eslint .",
+    "format": "eslint . --fix",
     "flow": "flow src",
-    "test": "NODE_ENV=test jest",
-    "test-ci": "NODE_ENV=test npm run lint && npm run flow && npm run test"
+    "test": "NODE_ENV=test jest -i",
+    "test-ci": "NODE_ENV=test npm run lint && npm run flow && npm run test",
+    "rev": "npm version patch && git push --follow-tags",
+    "revbeta": "sh ./make_beta.sh && npm version prerelease && git push --follow-tags"
   },
   "dependencies": {
-    "fbjs": "^0.8.7",
+    "fbjs": "^0.8.12",
     "immutable": "~3.7.4",
     "object-assign": "^4.1.0"
   },
@@ -50,8 +53,8 @@
     "eslint-plugin-babel": "^3.3.0",
     "eslint-plugin-flowtype": "^2.17.1",
     "eslint-plugin-react": "^5.2.2",
-    "fbjs-scripts": "^0.7.0",
-    "flow-bin": "^0.38.0",
+    "fbjs-scripts": "^0.8.0",
+    "flow-bin": "^0.42.0",
     "gulp": "^3.9.0",
     "gulp-babel": "^6.1.2",
     "gulp-browserify-thin": "^0.1.5",
@@ -66,14 +69,16 @@
     "jest": "^15.1.1",
     "react": "^15.0.0-rc.1",
     "react-dom": "^15.0.0-rc.1",
+    "react-test-renderer": "^15.5.4",
     "run-sequence": "^1.1.2",
+    "s3-deploy": "^0.7.3",
     "through2": "^2.0.1",
     "vinyl-buffer": "^1.0.0",
     "webpack-stream": "^3.0.0"
   },
   "devEngines": {
-    "node": "4.x || 6.x",
-    "npm": "2.x || 3.x"
+    "node": "4.x || 6.x || 8.x",
+    "npm": "2.x || 3.x || 6.x"
   },
   "jest": {
     "automock": true,

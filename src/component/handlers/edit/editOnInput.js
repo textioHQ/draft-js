@@ -12,17 +12,19 @@
 
 'use strict';
 
+import type DraftEditor from 'DraftEditor.react';
+
+const DraftFeatureFlags = require('DraftFeatureFlags');
 var DraftModifier = require('DraftModifier');
 var DraftOffsetKey = require('DraftOffsetKey');
 var EditorState = require('EditorState');
-var UserAgent = require('UserAgent');
+
+var editOnSelect = require('editOnSelect');
+var EditorBidiService = require('EditorBidiService');
 
 var findAncestorOffsetKey = require('findAncestorOffsetKey');
 var nullthrows = require('nullthrows');
 
-import type DraftEditor from 'DraftEditor.react';
-
-var isGecko = UserAgent.isEngine('Gecko');
 
 var DOUBLE_NEWLINE = '\n\n';
 
@@ -39,20 +41,92 @@ var DOUBLE_NEWLINE = '\n\n';
  * due to a spellcheck change, and we can incorporate it into our model.
  */
 function editOnInput(editor: DraftEditor): void {
-  if (editor._pendingStateFromBeforeInput !== undefined) {
-    editor.update(editor._pendingStateFromBeforeInput);
-    editor._pendingStateFromBeforeInput = undefined;
+
+  // We have already updated our internal state appropriately for this input
+  // event. See editOnBeforeInput() for more info
+  if (editor._updatedNativeInsertionBlock && !editor._renderNativeContent) {
+    editor._updatedNativeInsertionBlock = null;
+    return;
+  }
+
+  editOnSelect(editor);
+  var editorState = editor._latestEditorState;
+
+  if (editor._updatedNativeInsertionBlock) {
+    const oldBlock = editor._updatedNativeInsertionBlock;
+    if (editorState.getSelection().getFocusKey() !== oldBlock.getKey()) {
+
+      // The selection has changed between editOnBeforeInput and now, and our
+      // optimistically updated block is no longer valid.
+      // Replace it with the non-updated block and let the input fall through.
+      const currentContent = editorState.getCurrentContent();
+      const contentWithOldBlock = currentContent.merge({
+        blockMap: currentContent.getBlockMap().set(oldBlock.getKey(), oldBlock),
+        selectionBefore: currentContent.getSelectionBefore(),
+        selectionAfter: currentContent.getSelectionAfter(),
+      });
+
+      var directionMap = EditorBidiService.getDirectionMap(
+        contentWithOldBlock,
+        editorState.getDirectionMap(),
+      );
+
+      editor.update(
+        EditorState.set(
+          editorState,
+          {
+            currentContent: contentWithOldBlock,
+            directionMap,
+          },
+        ),
+      );
+
+      editorState = editor._latestEditorState;
+    }
+    editor._updatedNativeInsertionBlock = null;
   }
 
   var domSelection = global.getSelection();
 
-  var {anchorNode, isCollapsed} = domSelection;
-  if (anchorNode.nodeType !== Node.TEXT_NODE) {
-    return;
+  var {anchorNode} = domSelection;
+  const isNotTextNode =
+    anchorNode.nodeType !== Node.TEXT_NODE;
+  const isNotTextOrElementNode = anchorNode.nodeType !== Node.TEXT_NODE
+    && anchorNode.nodeType !== Node.ELEMENT_NODE;
+
+  if (DraftFeatureFlags.draft_killswitch_allow_nontextnodes) {
+    if (isNotTextNode) {
+      return;
+    }
+  } else {
+    if (isNotTextOrElementNode) {
+      // TODO: (t16149272) figure out context for this change
+      return;
+    }
+  }
+
+  if (
+    anchorNode.nodeType === Node.TEXT_NODE &&
+    (anchorNode.previousSibling !== null || anchorNode.nextSibling !== null)
+  ) {
+    // When typing at the beginning of a visual line, Chrome splits the text
+    // nodes into two. Why? No one knows. This commit is suspicious:
+    // https://chromium.googlesource.com/chromium/src/+/a3b600981286b135632371477f902214c55a1724
+    // To work around, we'll merge the sibling text nodes back into this one.
+    const span = anchorNode.parentNode;
+    anchorNode.nodeValue = span.textContent;
+    for (
+      let child = span.firstChild;
+      child !== null;
+      child = child.nextSibling
+    ) {
+      if (child !== anchorNode) {
+        span.removeChild(child);
+      }
+    }
   }
 
   var domText = anchorNode.textContent;
-  var editorState = editor._latestEditorState;
   var offsetKey = nullthrows(findAncestorOffsetKey(anchorNode));
   var {blockKey, decoratorKey, leafKey} = DraftOffsetKey.decode(offsetKey);
 
@@ -74,6 +148,10 @@ function editOnInput(editor: DraftEditor): void {
 
   // No change -- the DOM is up to date. Nothing to do here.
   if (domText === modelText) {
+    // This can be buggy for some Android keyboards because they don't fire
+    // standard onkeydown/pressed events and only fired editOnInput
+    // so domText is already changed by the browser and ends up being equal
+    // to modelText unexpectedly
     return;
   }
 
@@ -97,53 +175,25 @@ function editOnInput(editor: DraftEditor): void {
   // native browser undo.
   const changeType = preserveEntity ? 'spellcheck-change' : 'apply-entity';
 
+  // Replace the full text of the leaf and set the selection to the value calculated in editOnSelect() above,
+  // because replacing the leaf will move the selection to the end of the leaf rather than the end of the
+  // changed text
   const newContent = DraftModifier.replaceText(
     content,
     targetRange,
     domText,
     block.getInlineStyleAt(start),
     preserveEntity ? block.getEntityAt(start) : null,
-  );
-
-  var anchorOffset, focusOffset, startOffset, endOffset;
-
-  if (isGecko) {
-    // Firefox selection does not change while the context menu is open, so
-    // we preserve the anchor and focus values of the DOM selection.
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
-    startOffset = start + Math.min(anchorOffset, focusOffset);
-    endOffset = startOffset + Math.abs(anchorOffset - focusOffset);
-    anchorOffset = startOffset;
-    focusOffset = endOffset;
-  } else {
-    // Browsers other than Firefox may adjust DOM selection while the context
-    // menu is open, and Safari autocorrect is prone to providing an inaccurate
-    // DOM selection. Don't trust it. Instead, use our existing SelectionState
-    // and adjust it based on the number of characters changed during the
-    // mutation.
-    var charDelta = domText.length - modelText.length;
-    startOffset = selection.getStartOffset();
-    endOffset = selection.getEndOffset();
-
-    anchorOffset = isCollapsed ? endOffset + charDelta : startOffset;
-    focusOffset = endOffset + charDelta;
-  }
-
-  // Segmented entities are completely or partially removed when their
-  // text content changes. For this case we do not want any text to be selected
-  // after the change, so we are not merging the selection.
-  var contentWithAdjustedDOMSelection = newContent.merge({
-    selectionBefore: content.getSelectionAfter(),
-    selectionAfter: selection.merge({anchorOffset, focusOffset}),
-  });
+  )
+    .set('selectionBefore', content.getSelectionBefore())
+    .set('selectionAfter', content.getSelectionAfter());
 
   editor.update(
     EditorState.push(
       editorState,
-      contentWithAdjustedDOMSelection,
-      changeType
-    )
+      newContent,
+      changeType,
+    ),
   );
 }
 

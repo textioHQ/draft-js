@@ -15,6 +15,7 @@ jest
   .disableAutomock();
 
 var Immutable = require('immutable');
+
 var applyEntityToContentBlock = require('applyEntityToContentBlock');
 var getSampleStateForTesting = require('getSampleStateForTesting');
 var removeEntitiesAtEdges = require('removeEntitiesAtEdges');
@@ -47,9 +48,9 @@ describe('removeEntitiesAtEdges', () => {
 
   function expectNullEntities(block) {
     expect(
-      getEntities(block)
+      getEntities(block),
     ).toEqual(
-      List(Repeat(null, block.getLength())).toJS()
+      List(Repeat(null, block.getLength())).toJS(),
     );
   }
 
@@ -68,6 +69,12 @@ describe('removeEntitiesAtEdges', () => {
     describe('Handling different mutability types', () => {
       it('must not remove mutable entities', () => {
         setEntityMutability('MUTABLE');
+        var result = removeEntitiesAtEdges(contentState, selectionOnEntity);
+        expectSameBlockMap(contentState, result);
+      });
+
+      it('must not remove plain entities', () => {
+        setEntityMutability('PLAIN');
         var result = removeEntitiesAtEdges(contentState, selectionOnEntity);
         expectSameBlockMap(contentState, result);
       });

@@ -12,19 +12,19 @@
 
 'use strict';
 
+import type EditorState from 'EditorState';
+import type SelectionState from 'SelectionState';
+
 var DraftOffsetKey = require('DraftOffsetKey');
 
 var nullthrows = require('nullthrows');
-
-import type EditorState from 'EditorState';
-import type SelectionState from 'SelectionState';
 
 function getUpdatedSelectionState(
   editorState: EditorState,
   anchorKey: string,
   anchorOffset: number,
   focusKey: string,
-  focusOffset: number
+  focusOffset: number,
 ): SelectionState {
   var selection: SelectionState = nullthrows(editorState.getSelection());
   if (__DEV__) {
@@ -33,7 +33,7 @@ function getUpdatedSelectionState(
       console.warn(
         'Invalid selection state.',
         arguments,
-        editorState.toJS()
+        editorState.toJS(),
       );
       /*eslint-enable no-console */
       return selection;
@@ -43,29 +43,41 @@ function getUpdatedSelectionState(
 
   var anchorPath = DraftOffsetKey.decode(anchorKey);
   var anchorBlockKey = anchorPath.blockKey;
-  var anchorLeaf = editorState
-    .getBlockTree(anchorBlockKey)
+  var anchorBlockTree = editorState.getBlockTree(anchorBlockKey);
+  if (!anchorBlockTree) {
+    return selection;
+  }
+  var anchorLeaf = anchorBlockTree
     .getIn([
       anchorPath.decoratorKey,
       'leaves',
       anchorPath.leafKey,
     ]);
+  if (!anchorLeaf) {
+    return selection;
+  }
 
   var focusPath = DraftOffsetKey.decode(focusKey);
   var focusBlockKey = focusPath.blockKey;
-  var focusLeaf = editorState
-    .getBlockTree(focusBlockKey)
+  var focusBlockTree = editorState.getBlockTree(focusBlockKey);
+  if (!focusBlockTree) {
+    return selection;
+  }
+  var focusLeaf = focusBlockTree
     .getIn([
       focusPath.decoratorKey,
       'leaves',
       focusPath.leafKey,
     ]);
+  if (!focusLeaf) {
+    return selection;
+  }
 
   var anchorLeafStart: number = anchorLeaf.get('start');
   var focusLeafStart: number = focusLeaf.get('start');
 
-  var anchorBlockOffset = anchorLeaf ? anchorLeafStart + anchorOffset : null;
-  var focusBlockOffset = focusLeaf ? focusLeafStart + focusOffset : null;
+  var anchorBlockOffset = anchorLeafStart + anchorOffset;
+  var focusBlockOffset = focusLeafStart + focusOffset;
 
   var areEqual = (
     selection.getAnchorKey() === anchorBlockKey &&

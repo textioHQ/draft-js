@@ -12,14 +12,16 @@
 
 'use strict';
 
+import type DraftEditor from 'DraftEditor.react';
+
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
 const Style = require('Style');
 
 const getFragmentFromSelection = require('getFragmentFromSelection');
 const getScrollPosition = require('getScrollPosition');
-
-import type DraftEditor from 'DraftEditor.react';
+const setImmediate = require('setImmediate');
+const setClipboardData = require('setClipboardData');
 
 /**
  * On `cut` events, native behavior is allowed to occur so that the system
@@ -42,6 +44,7 @@ function editOnCut(editor: DraftEditor, e: SyntheticClipboardEvent): void {
 
   // Track the current scroll position so that it can be forced back in place
   // after the editor regains control of the DOM.
+  // $FlowFixMe e.target should be an instanceof Node
   const scrollParent = Style.getScrollParent(e.target);
   const {x, y} = getScrollPosition(scrollParent);
 
@@ -52,18 +55,23 @@ function editOnCut(editor: DraftEditor, e: SyntheticClipboardEvent): void {
   editor.setMode('cut');
 
   // Let native `cut` behavior occur, then recover control.
-  setTimeout(() => {
+  setImmediate(() => {
     editor.restoreEditorDOM({x, y});
     editor.exitCurrentMode();
     editor.update(removeFragment(editorState));
-  }, 0);
+  });
+
+  if (editor.props.convertBlockMapToClipboard) {
+    const clipboardDataToSet = editor.props.convertBlockMapToClipboard(fragment);
+    setClipboardData(e, editor, clipboardDataToSet);
+  }
 }
 
 function removeFragment(editorState: EditorState): EditorState {
   const newContent = DraftModifier.removeRange(
     editorState.getCurrentContent(),
     editorState.getSelection(),
-    'forward'
+    'forward',
   );
   return EditorState.push(editorState, newContent, 'remove-range');
 }
