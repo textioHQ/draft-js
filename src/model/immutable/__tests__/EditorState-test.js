@@ -131,22 +131,13 @@ describe('EditorState', () => {
         expect(editor.getCurrentInlineStyle()).toBe(BOLD);
       });
 
-      it('uses previous block at offset `0` within empty block', () => {
+      it('does not style empty blocks based on context', () => {
         var selection = mainSelection.merge({
           anchorKey: 'emptyA',
           focusKey: 'emptyA',
         });
         var editor = EditorState.acceptSelection(mainEditor, selection);
-        expect(editor.getCurrentInlineStyle()).toBe(BOLD);
-      });
-
-      it('looks upward through empty blocks to find a character', () => {
-        var selection = mainSelection.merge({
-          anchorKey: 'emptyB',
-          focusKey: 'emptyB',
-        });
-        var editor = EditorState.acceptSelection(mainEditor, selection);
-        expect(editor.getCurrentInlineStyle()).toBe(BOLD);
+        expect(editor.getCurrentInlineStyle()).toBe(NONE);
       });
 
       it('does not discard style override when changing block type', () => {
@@ -213,17 +204,6 @@ describe('EditorState', () => {
           focusOffset: 3,
         });
 
-        var editor = EditorState.acceptSelection(mainEditor, selection);
-        expect(editor.getCurrentInlineStyle()).toBe(BOLD);
-      });
-
-      it('looks upward through empty blocks to find a character', () => {
-        var selection = selectionState.merge({
-          anchorKey: 'emptyA',
-          anchorOffset: 0,
-          focusKey: 'c',
-          focusOffset: 3,
-        });
         var editor = EditorState.acceptSelection(mainEditor, selection);
         expect(editor.getCurrentInlineStyle()).toBe(BOLD);
       });
