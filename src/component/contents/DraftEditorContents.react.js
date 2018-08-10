@@ -218,7 +218,8 @@ class DraftEditorContents extends React.Component {
     // processedBlocks will contain all merged blocks
     // For example: header blocks,body blocks,and footer blocks will be merged into processedBlocks (in order)
     // We need to manually group by type (header,body,footer) and apply any custom wrapper.
-    // Then we need group those blocks (i.e. header blocks) by any specific wrapping needed internally by Draft (wrapping <li>'s in a <ul>)
+    // Then we need group those blocks (i.e. header blocks) by 
+    // any specific wrapping needed internally by Draft (wrapping <li>'s in a <ul>)
     // We then put everything back together at the end (outputBlocks)
 
     // Group contiguous runs of blocks
@@ -280,9 +281,8 @@ class DraftEditorContents extends React.Component {
           blocksInInternalWrapper,
         );
         outputBlocks.push(customWrapperElement);
-      }
-      // If there's only a wrapperTemplate (internal wrapper), only group by that 
-      else if (info.wrapperTemplate) {
+      } else if (info.wrapperTemplate) {
+        // If there's only a wrapperTemplate (internal wrapper), only group by that 
         const blocks = [];
         do {
           blocks.push(processedBlocks[ii].block);

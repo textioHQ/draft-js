@@ -25,6 +25,7 @@
     "build": "gulp",
     "postbuild": "node node_modules/fbjs-scripts/node/check-lib-requires.js lib",
     "lint": "eslint .",
+    "format": "eslint . --fix",
     "flow": "flow src",
     "test": "NODE_ENV=test jest -i",
     "test-ci": "NODE_ENV=test npm run lint && npm run flow && npm run test",
@@ -76,8 +77,8 @@
     "webpack-stream": "^3.0.0"
   },
   "devEngines": {
-    "node": "4.x || 6.x",
-    "npm": "2.x || 3.x"
+    "node": "4.x || 6.x || 8.x",
+    "npm": "2.x || 3.x || 6.x"
   },
   "jest": {
     "automock": true,
