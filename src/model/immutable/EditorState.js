@@ -617,8 +617,7 @@ function getInlineStyleForCollapsedSelection(
     return startBlock.getInlineStyleAt(0);
   }
 
-  // Otherwise, look upward in the document to find the closest character.
-  return lookUpwardForInlineStyle(content, startKey);
+  return OrderedSet();
 }
 
 function getInlineStyleForNonCollapsedSelection(
@@ -638,25 +637,6 @@ function getInlineStyleForNonCollapsedSelection(
   // style in the block.
   if (startOffset > 0) {
     return startBlock.getInlineStyleAt(startOffset - 1);
-  }
-
-  // Otherwise, look upward in the document to find the closest character.
-  return lookUpwardForInlineStyle(content, startKey);
-}
-
-function lookUpwardForInlineStyle(
-  content: ContentState,
-  fromKey: string,
-): DraftInlineStyle {
-  var previousBlock = content.getBlockBefore(fromKey);
-  var previousLength;
-
-  while (previousBlock) {
-    previousLength = previousBlock.getLength();
-    if (previousLength) {
-      return previousBlock.getInlineStyleAt(previousLength - 1);
-    }
-    previousBlock = content.getBlockBefore(previousBlock.getKey());
   }
 
   return OrderedSet();
