@@ -49,8 +49,7 @@ function setClipboardData(e: SyntheticClipboardEvent, editor: DraftEditor, {text
   try {
     clipboard.setData('text/html', html);
     clipboard.setData('text/plain', text);
-  }
-  catch (err) {
+  }  catch (err) {
     clipboard.setData('Text', text);
   }
 

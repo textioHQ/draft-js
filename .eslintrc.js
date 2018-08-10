@@ -22,7 +22,7 @@ module.exports = {
       exports: 'always-multiline',
       functions: 'always-multiline',
     }],
-    'max-len': [2, 80, 2, {
+    'max-len': [2, 120, 2, {
       'ignorePattern': maxLenIgnorePattern,
       'ignoreUrls': true,
     }],

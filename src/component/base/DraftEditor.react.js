@@ -201,7 +201,7 @@ class DraftEditor extends React.Component {
         // selects some text and hits 'copy' nothing will be copied because the selectState contains
         // nothing :( Call editOnSelect to force the actual DOM selection onto the editor and then
         // allow the normal copy method to do its thing.
-        editOnSelect(this)
+        editOnSelect(this);
         const method = this._handler && this._handler[eventName];
         method && method(this, e);
       }
@@ -247,7 +247,7 @@ class DraftEditor extends React.Component {
 
       // Add ignore attribute for an IESpell, an obscure plugin that doesn't respect spellcheck="false" on a
       // contenteditable div
-      editorNode.setAttribute(`ieSpell_ignored`, `true`);
+      editorNode.setAttribute('ieSpell_ignored', 'true');
     }
   }
 

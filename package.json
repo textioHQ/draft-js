@@ -25,6 +25,7 @@
     "build": "gulp",
     "postbuild": "node node_modules/fbjs-scripts/node/check-lib-requires.js lib",
     "lint": "eslint .",
+    "format": "eslint . --fix",
     "flow": "flow src",
     "test": "NODE_ENV=test jest -i",
     "test-ci": "NODE_ENV=test npm run lint && npm run flow && npm run test",

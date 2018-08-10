@@ -68,7 +68,7 @@ function editOnInput(editor: DraftEditor): void {
 
       var directionMap = EditorBidiService.getDirectionMap(
         contentWithOldBlock,
-        editorState.getDirectionMap()
+        editorState.getDirectionMap(),
       );
 
       editor.update(
@@ -77,8 +77,8 @@ function editOnInput(editor: DraftEditor): void {
           {
             currentContent: contentWithOldBlock,
             directionMap,
-          }
-        )
+          },
+        ),
       );
 
       editorState = editor._latestEditorState;
@@ -193,7 +193,7 @@ function editOnInput(editor: DraftEditor): void {
       editorState,
       newContent,
       changeType,
-    )
+    ),
   );
 }
 

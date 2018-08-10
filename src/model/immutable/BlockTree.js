@@ -157,7 +157,7 @@ function areEqual(a: any, b: any): boolean {
 }
 
 function areInlineStylesEqual(a: OrderedSet, b: OrderedSet) {
-    return a === b || a.size === 0 && b.size === 0;
+  return a === b || a.size === 0 && b.size === 0;
 }
 
 module.exports = BlockTree;
