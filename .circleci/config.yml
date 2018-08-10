@@ -1,0 +1,48 @@
+version: 2
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - release:
+          filters:
+            branches:
+              only: release
+      - topic:
+          filters:
+            branches:
+              only: /topic-.*/
+jobs:
+  release:
+    docker:
+      - image: circleci/node:8.10.0-stretch-browsers
+    steps:
+      - checkout
+      # Add the authtoken for npm to get access to the private scoped packages
+      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+      - run: sudo npm install -g npm@6.0.0
+      - run: npm install
+      - run: npm ls || true
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run test
+      # TODO - Add deployment here (need to discuss with team)
+      - store_artifacts:
+          path: coverage
+          destination: coverage
+  topic:
+    docker:
+      - image: circleci/node:8.10.0-stretch-browsers
+    steps:
+      - checkout
+      # Add the authtoken for npm to get access to the private scoped packages
+      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+      - run: sudo npm install -g npm@6.0.0
+      - run: npm install
+      - run: npm ls || true
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run test
+      - store_artifacts:
+          path: coverage
+          destination: coverage
