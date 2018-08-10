@@ -18,7 +18,7 @@ jobs:
       - image: circleci/node:8.10.0-stretch-browsers
     steps:
       - checkout
-      # Add the authtoken for npm to get access to the private scoped packages
+      # Add the authtoken for npm to get access to publish
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
       - run: sudo npm install -g npm@6.0.0
       - run: npm install
@@ -35,8 +35,6 @@ jobs:
       - image: circleci/node:8.10.0-stretch-browsers
     steps:
       - checkout
-      # Add the authtoken for npm to get access to the private scoped packages
-      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
       - run: sudo npm install -g npm@6.0.0
       - run: npm install
       - run: npm ls || true
