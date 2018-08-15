@@ -18,6 +18,7 @@ var UserAgent = require('UserAgent');
 var setImmediate = require('setImmediate');
 
 var isEdge = UserAgent.isBrowser('Edge');
+var needsClipboardPolyfill = require('needsClipboardPolyfill');
 
 function setClipboardData(e: SyntheticClipboardEvent, editor: DraftEditor, {text, html}): void {
 
@@ -29,7 +30,10 @@ function setClipboardData(e: SyntheticClipboardEvent, editor: DraftEditor, {text
     const testClipboardString = 'setting the clipboard works';
     clipboard.setData('Text', testClipboardString);
 
-    if (clipboard.getData('Text') !== testClipboardString) {
+    if (
+      clipboard.getData('Text') !== testClipboardString ||
+      needsClipboardPolyfill()
+    ) {
 
       doCopyTrap(editor, html);
       // Let the native event go through
