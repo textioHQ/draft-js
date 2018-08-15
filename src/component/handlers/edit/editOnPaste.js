@@ -28,7 +28,7 @@ var getTextContentFromFiles = require('getTextContentFromFiles');
 const isEventHandled = require('isEventHandled');
 var splitTextIntoTextBlocks = require('splitTextIntoTextBlocks');
 var setImmediate = require('setImmediate');
-var UserAgent = require('UserAgent');
+var needsClipboardPolyfill = require('needsClipboardPolyfill');
 
 /**
  * Paste content.
@@ -221,13 +221,6 @@ function getHTML(data: DataTransfer) {
     return undefined;
   }
   return data.getHTML();
-}
-
-function needsClipboardPolyfill() {
-  const isEdge = UserAgent.isBrowser('Edge');
-  const isIE = UserAgent.isBrowser('IE');
-  const isSafari = UserAgent.isBrowser('Safari < 10');
-  return isEdge || isIE || isSafari;
 }
 
 function insertFragment(
