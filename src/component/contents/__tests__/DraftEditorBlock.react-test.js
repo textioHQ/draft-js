@@ -122,7 +122,6 @@ function arePropsEqual(renderedChild, leafPropSet) {
 function assertLeaves(renderedBlock, leafProps) {
   leafProps.forEach((leafPropSet, ii) => {
     const child = renderedBlock[ii];
-    // child.toBeComponentOfType(DraftEditorLeaf);	    
     expect(child.type).toBe(DraftEditorLeaf);
     arePropsEqual(child, leafPropSet);
   });
@@ -474,7 +473,6 @@ describe('DraftEditorBlock.react', () => {
       var decorator = new Decorator();
       var props = getProps(helloBlock, decorator);
 
-      // START HERE !!! WHEN BACK
       var container = document.createElement('div');
       const block = ReactTestRenderer.create(
         <DraftEditorBlock {...props} />,
