@@ -38,8 +38,8 @@
     "object-assign": "^4.1.0"
   },
   "peerDependencies": {
-    "react": "^0.14.0 || ^15.0.0-rc",
-    "react-dom": "^0.14.0 || ^15.0.0-rc"
+    "react": "^0.14.0 || ^15.0.0-rc || ^16.0.0-rc || ^16.0.0",
+    "react-dom": "^0.14.0 || ^15.0.0-rc || ^16.0.0-rc || ^16.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.8.0",
@@ -47,6 +47,8 @@
     "babel-preset-fbjs": "^2.1.0",
     "del": "^2.2.0",
     "envify": "^3.4.0",
+    "enzyme": "^3.1.0",
+    "enzyme-adapter-react-16": "^1.0.2",
     "es6-shim": "^0.34.4",
     "eslint": "^3.0.1",
     "eslint-config-fbjs": "^1.1.0",
@@ -66,10 +68,10 @@
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.2.0",
     "gulp-util": "^3.0.6",
-    "jest": "^15.1.1",
-    "react": "^15.0.0-rc.1",
-    "react-dom": "^15.0.0-rc.1",
-    "react-test-renderer": "^15.5.4",
+    "jest": "^23.5.0",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "react-test-renderer": "^16.0.0",
     "run-sequence": "^1.1.2",
     "s3-deploy": "^0.7.3",
     "through2": "^2.0.1",
@@ -82,20 +84,28 @@
   },
   "jest": {
     "automock": true,
+    "globals": {
+      "__DEV__": true
+    },
     "rootDir": "./",
-    "scriptPreprocessor": "scripts/jest/preprocessor.js",
-    "setupFiles": [
-      "node_modules/fbjs-scripts/jest/environment.js"
+    "roots": [
+      "<rootDir>/src/"
     ],
+    "setupFiles": [
+      "<rootDir>/scripts/jest/shims.js"
+    ],
+    "transform": {
+      ".*": "<rootDir>/scripts/jest/preprocessor.js"
+    },
+    "haste": {
+      "hasteImplModulePath": "<rootDir>/scripts/jest/hasteImpl.js"
+    },
     "modulePathIgnorePatterns": [
       "<rootDir>/lib/",
       "<rootDir>/node_modules/"
     ],
-    "preprocessorIgnorePatterns": [
+    "transformIgnorePatterns": [
       "<rootDir>/node_modules/"
-    ],
-    "testPathDirs": [
-      "<rootDir>/src/"
     ],
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/fbjs/node_modules/",
