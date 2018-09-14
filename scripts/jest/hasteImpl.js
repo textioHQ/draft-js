@@ -20,7 +20,7 @@ const BLACKLISTED_PATTERNS/*: Array<RegExp>*/ = [
 ];
 
 const WHITELISTED_PREFIXES/*: Array<string>*/ = [
-  'src'
+  'src',
 ];
 
 const NAME_REDUCERS/*: Array<[RegExp, string]>*/ = [
@@ -39,7 +39,7 @@ const haste = {
    */
   getHasteName(
     filePath/*: string*/,
-    sourceCode/* : ?string*/
+    sourceCode/* : ?string*/,
   )/*: (string | void)*/ {
     if (!isHastePath(filePath)) {
       return undefined;
@@ -47,7 +47,7 @@ const haste = {
 
     const hasteName = NAME_REDUCERS.reduce(
       (name, [pattern, replacement]) => name.replace(pattern, replacement),
-      filePath
+      filePath,
     );
 
     return hasteName;
