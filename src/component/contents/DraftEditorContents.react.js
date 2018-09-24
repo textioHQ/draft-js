@@ -155,7 +155,14 @@ class DraftEditorContents extends React.Component {
       );
 
       const depth = block.getDepth();
-      let className = this.props.blockStyleFn(block);
+
+      let className = '';
+      if (this.props.blockStyleFn) {
+        // Note, our Editor passes in a function that can return 'false', As of React 16 this is an error.
+        // Eventually we will want to fix it in the editor package, but that's more involved.
+        // Defaulting falsy values to empty string is the quick fix.
+        className = this.props.blockStyleFn(block) || '';
+      }
 
       // List items are special snowflakes, since we handle nesting and
       // counters manually.
@@ -173,6 +180,7 @@ class DraftEditorContents extends React.Component {
       }
 
       const Component = CustomComponent || DraftEditorBlock;
+
       let childProps = {
         className,
         'data-block': true,
