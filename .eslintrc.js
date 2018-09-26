@@ -26,5 +26,6 @@ module.exports = {
       'ignorePattern': maxLenIgnorePattern,
       'ignoreUrls': true,
     }],
+    'camelcase': 'off',
   },
 };
