@@ -13,18 +13,18 @@
 
 'use strict';
 
-import type {DraftBlockRenderConfig} from 'DraftBlockRenderConfig';
-import type {DraftBlockRenderMap} from 'DraftBlockRenderMap';
-import type {DraftBlockType} from 'DraftBlockType';
-import type {DraftInlineStyle} from 'DraftInlineStyle';
-import type {EntityMap} from 'EntityMap';
+import type { DraftBlockRenderConfig } from 'DraftBlockRenderConfig';
+import type { DraftBlockRenderMap } from 'DraftBlockRenderMap';
+import type { DraftBlockType } from 'DraftBlockType';
+import type { DraftInlineStyle } from 'DraftInlineStyle';
+import type { EntityMap } from 'EntityMap';
 
 const CharacterMetadata = require('CharacterMetadata');
 const ContentBlock = require('ContentBlock');
 const DefaultDraftBlockRenderMap = require('DefaultDraftBlockRenderMap');
 const DraftEntity = require('DraftEntity');
 const Immutable = require('immutable');
-const {Set} = require('immutable');
+const { Set } = require('immutable');
 const URI = require('URI');
 
 const generateRandomKey = require('generateRandomKey');
@@ -225,9 +225,20 @@ function processInlineTag(
   node: Node,
   currentStyle: DraftInlineStyle,
 ): DraftInlineStyle {
+
+  console.log('processInlineTag', tag, node, currentStyle);
   var styleToCheck = inlineTags[tag];
   if (styleToCheck) {
     currentStyle = currentStyle.add(styleToCheck).toOrderedSet();
+  } else if (tag === 'a') {
+    if (
+      node instanceof HTMLAnchorElement &&
+      node.href &&
+      hasValidLinkText(node)) {
+      const anchor = node;
+      const detectedUrl = new URI(anchor.href).toString();
+      currentStyle = currentStyle.add(`URL:${new Date().getTime().toString()}:${detectedUrl}`).toOrderedSet();
+    }
   } else if (node instanceof HTMLElement) {
     const htmlElement = node;
     currentStyle = currentStyle.withMutations(style => {
@@ -334,7 +345,7 @@ function genFragment(
   depth: number,
   blockRenderMap: DraftBlockRenderMap,
   inEntity?: string,
-): {chunk: Chunk, entityMap: EntityMap} {
+): { chunk: Chunk, entityMap: EntityMap } {
   var nodeName = node.nodeName.toLowerCase();
   var newBlock = false;
   var nextBlockType = 'unstyled';
@@ -345,7 +356,7 @@ function genFragment(
   if (nodeName === '#text') {
     var text = node.textContent;
     if (text.trim() === '' && inBlock !== 'pre') {
-      return {chunk: getWhitespaceChunk(inEntity), entityMap};
+      return { chunk: getWhitespaceChunk(inEntity), entityMap };
     }
     if (inBlock !== 'pre') {
       // Can't use empty string because MSWord
@@ -378,9 +389,9 @@ function genFragment(
         getBlockTypeForTag(inBlock, lastList, blockRenderMap) === 'unstyled'
       )
     ) {
-      return {chunk: getBlockDividerChunk('unstyled', depth), entityMap};
+      return { chunk: getBlockDividerChunk('unstyled', depth), entityMap };
     }
-    return {chunk: getSoftNewlineChunk(), entityMap};
+    return { chunk: getSoftNewlineChunk(), entityMap };
   }
 
   // IMG tags
@@ -527,7 +538,7 @@ function genFragment(
     );
   }
 
-  return {chunk, entityMap: newEntityMap};
+  return { chunk, entityMap: newEntityMap };
 }
 
 function getChunkForHTML(
@@ -535,7 +546,7 @@ function getChunkForHTML(
   DOMBuilder: Function,
   blockRenderMap: DraftBlockRenderMap,
   entityMap: EntityMap,
-): ?{chunk: Chunk, entityMap: EntityMap} {
+): ?{ chunk: Chunk, entityMap: EntityMap } {
   html = html
     .trim()
     .replace(REGEX_CR, '')
@@ -595,24 +606,24 @@ function getChunkForHTML(
 
   // If we saw no block tags, put an unstyled one in
   if (chunk.blocks.length === 0) {
-    chunk.blocks.push({type: 'unstyled', depth: 0});
+    chunk.blocks.push({ type: 'unstyled', depth: 0 });
   }
 
   // Sometimes we start with text that isn't in a block, which is then
   // followed by blocks. Need to fix up the blocks to add in
   // an unstyled block for this content
   if (chunk.text.split('\r').length === chunk.blocks.length + 1) {
-    chunk.blocks.unshift({type: 'unstyled', depth: 0});
+    chunk.blocks.unshift({ type: 'unstyled', depth: 0 });
   }
 
-  return {chunk, entityMap: newEntityMap};
+  return { chunk, entityMap: newEntityMap };
 }
 
 function convertFromHTMLtoContentBlocks(
   html: string,
   DOMBuilder: Function = getSafeBodyFromHTML,
   blockRenderMap?: DraftBlockRenderMap = DefaultDraftBlockRenderMap,
-): ?{contentBlocks: ?Array<ContentBlock>, entityMap: EntityMap} {
+): ?{ contentBlocks: ?Array<ContentBlock>, entityMap: EntityMap } {
   // Be ABSOLUTELY SURE that the dom builder you pass here won't execute
   // arbitrary code in whatever environment you're running this in. For an
   // example of how we try to do this in-browser, see getSafeBodyFromHTML.
@@ -645,25 +656,25 @@ function convertFromHTMLtoContentBlocks(
         var entities = nullthrows(chunk).entities.slice(start, end);
         var characterList = List(
           inlines.map((style, ii) => {
-            var data = {style, entity: (null: ?string)};
-            if (entities[ii]) {
-              data.entity = entities[ii];
-            }
+            var data = { style, entity: (null: ?string)};
+    if(entities[ii]) {
+      data.entity = entities[ii];
+    }
             return CharacterMetadata.create(data);
-          }),
+  }),
         );
-        start = end + 1;
+  start = end + 1;
 
-        return new ContentBlock({
-          key: generateRandomKey(),
-          type: nullthrows(chunk).blocks[ii].type,
-          depth: nullthrows(chunk).blocks[ii].depth,
-          text: textBlock,
-          characterList,
-        });
-      },
+  return new ContentBlock({
+    key: generateRandomKey(),
+    type: nullthrows(chunk).blocks[ii].type,
+    depth: nullthrows(chunk).blocks[ii].depth,
+    text: textBlock,
+    characterList,
+  });
+},
     ),
-    entityMap: newEntityMap,
+entityMap: newEntityMap,
   };
 }
 
