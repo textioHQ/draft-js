@@ -42,6 +42,7 @@ const editOnSelect = require('editOnSelect');
 const getScrollPosition = require('getScrollPosition');
 const invariant = require('invariant');
 const nullthrows = require('nullthrows');
+const areLevel2InputEventsSupported = require('areLevel2InputEventsSupported');
 
 const isIE = UserAgent.isBrowser('IE');
 
@@ -64,13 +65,6 @@ const handlerMap = {
 type State = {
   contentsKey: number,
 };
-
-function areLevel2InputEventsSupported() {
-  const element = window.document.createElement('div');
-  element.contentEditable = true;
-  const support = 'onbeforeinput' in element;
-  return support;
-}
 
 /**
  * `DraftEditor` is the root editor component. It composes a `contentEditable`
