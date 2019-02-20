@@ -400,7 +400,8 @@ function genFragment(
       }
     });
     const imageURI = new URI(entityConfig.src).toString();
-    node.textContent = imageURI; // Output src if no decorator
+    console.log('stripping text and inserting void node');
+    node.textContent = '\u200B';//imageURI; // Output src if no decorator
 
     // TODO: update this when we remove DraftEntity entirely
     inEntity = DraftEntity.__create(
@@ -408,6 +409,8 @@ function genFragment(
       'MUTABLE',
       entityConfig || {},
     );
+
+    console.log('draft', inEntity, node);
   }
 
   var chunk = getEmptyChunk();
