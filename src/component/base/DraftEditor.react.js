@@ -65,6 +65,13 @@ type State = {
   contentsKey: number,
 };
 
+function areLevel2InputEventsSupported() {
+  const element = window.document.createElement('div');
+  element.contentEditable = true;
+  const support = 'onbeforeinput' in element;
+  return support;
+}
+
 /**
  * `DraftEditor` is the root editor component. It composes a `contentEditable`
  * div, and provides a wide variety of useful function props for managing the
@@ -96,6 +103,7 @@ class DraftEditor extends React.Component {
   _renderNativeContent: boolean;
   _updatedNativeInsertionBlock: boolean;
   _latestCommittedEditorState: EditorState;
+  _useNativeBeforeInput: boolean;
 
   /**
    * Define proxies that can route events to the current handler.
@@ -135,6 +143,8 @@ class DraftEditor extends React.Component {
 
   constructor(props: DraftEditorProps) {
     super(props);
+
+    this._useNativeBeforeInput = props.useNativeBeforeInputIfAble && areLevel2InputEventsSupported();
 
     this._blockSelectEvents = false;
     this._clipboard = null;
@@ -235,15 +245,28 @@ class DraftEditor extends React.Component {
     // it is not possible to set up an onPaste handler through react.
     // Manually use addEventListener and removeEventListener below.
     // See the comments in editOnPaste for why this is needed.
+    //
+    // We also provide an option to manually manage our own onBeforeInput handler
+    // without going through React. React polyfills this event using `textInput`/`keypress`,
+    // but doesn't use the natively-available event when it can (see https://github.com/facebook/react/issues/11211)
+    // In rare circumstances, we want to provide the option to force the use of the native
+    // `beforeinput`, event. Slate does something similar https://github.com/ianstormtaylor/slate/commit/f812816b7dcb2d4b2efa0d4ba12d4feac31850c9
     if (this._editor) {
       const editorNode = ReactDOM.findDOMNode(this._editor);
       editorNode.removeEventListener('paste', this._onPaste);
+      if (this._useNativeBeforeInput) {
+        editorNode.removeEventListener('beforeinput', this._onBeforeInput);
+      }
     }
 
     this._editor = ref;
     if (this._editor) {
       const editorNode = ReactDOM.findDOMNode(this._editor);
+
       editorNode.addEventListener('paste', this._onPaste);
+      if (this._useNativeBeforeInput) {
+        editorNode.addEventListener('beforeinput', this._onBeforeInput);
+      }
 
       // Add ignore attribute for an IESpell, an obscure plugin that doesn't respect spellcheck="false" on a
       // contenteditable div
@@ -307,7 +330,7 @@ class DraftEditor extends React.Component {
             })}
             contentEditable={!readOnly}
             data-testid={this.props.webDriverTestID}
-            onBeforeInput={this._onBeforeInput}
+            onBeforeInput={this._useNativeBeforeInput ? undefined : this._onBeforeInput}
             onBlur={this._onBlur}
             onCompositionEnd={this._onCompositionEnd}
             onCompositionStart={this._onCompositionStart}

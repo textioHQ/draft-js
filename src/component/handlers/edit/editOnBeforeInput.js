@@ -78,7 +78,7 @@ function replaceText(
  * preserve spellcheck highlighting, which disappears or flashes if re-render
  * occurs on the relevant text nodes.
  */
-function editOnBeforeInput(editor: DraftEditor, e: SyntheticInputEvent): void {
+function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEvent): void {
 
   // React doesn't fire a selection event until mouseUp, so it's possible to
   // click to change selection, hold the mouse down, and type a character
