@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.10.68-topic-image-placeholder-poc.0",
+  "version": "0.10.68-topic-image-placeholder-poc.1",
   "keywords": [
     "draftjs",
     "editor",
