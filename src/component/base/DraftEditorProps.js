@@ -175,6 +175,8 @@ export type DraftEditorProps = {
   // an element tag and an optional react element wrapper. This configuration
   // is used for both rendering and paste processing.
   blockRenderMap: DraftBlockRenderMap,
+
+  useNativeBeforeInputIfAble?: boolean,
 };
 
 export type DraftEditorDefaultProps = {
@@ -185,4 +187,5 @@ export type DraftEditorDefaultProps = {
   readOnly: boolean,
   spellCheck: boolean,
   stripPastedStyles: boolean,
+  useNativeBeforeInputIfAble: false,
 };
