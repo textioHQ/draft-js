@@ -85,6 +85,13 @@ const imgAttr = [
   'height',
   'src',
   'width',
+  // following needed for outlook to serialize images properly
+  'originalsrc',
+  'size',
+  'contenttype',
+  'crossorigin',
+  'unselectable',
+  'style',
 ];
 
 var lastBlock;
