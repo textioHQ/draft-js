@@ -317,11 +317,8 @@ function hasValidLinkText(link: Node): boolean {
     'Link must be an HTMLAnchorElement.',
   );
   var protocol = link.protocol;
-  return (
-    protocol === 'http:' ||
-    protocol === 'https:' ||
-    protocol === 'mailto:'
-  );
+  // eslint-disable-next-line no-script-url
+  return protocol !== 'javascript:';
 }
 
 function genFragment(
