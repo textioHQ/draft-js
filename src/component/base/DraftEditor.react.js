@@ -171,6 +171,7 @@ class DraftEditor extends React.Component {
     this._onSelect = this._buildHandler('onSelect');
 
     this._setEditorRef = this._setEditorRef.bind(this);
+    this._setEditorContainerRef = this._setEditorContainerRef.bind(this);
 
     // Manual binding for public and internal methods.
     this.focus = this._focus.bind(this);
@@ -268,6 +269,10 @@ class DraftEditor extends React.Component {
     }
   }
 
+  _setEditorContainerRef(ref: React.Element<any>): void {
+    this.editorContainer = ref;
+  }
+
   render(): React.Element<any> {
     const {readOnly, textAlignment} = this.props;
     const rootClass = cx({
@@ -298,7 +303,7 @@ class DraftEditor extends React.Component {
         {this._renderPlaceholder()}
         <div
           className={cx('DraftEditor/editorContainer')}
-          ref="editorContainer">
+          ref={this._setEditorContainerRef}>
           <div
             aria-activedescendant={
               readOnly ? null : this.props.ariaActiveDescendantID
