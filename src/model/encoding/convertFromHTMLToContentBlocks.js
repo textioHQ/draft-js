@@ -146,9 +146,7 @@ const isValidAnchor = (node: Node) => {
   return !!(
     node instanceof HTMLAnchorElement &&
     node.href &&
-    (node.protocol === 'http:' ||
-      node.protocol === 'https:' ||
-      node.protocol === 'mailto:')
+    node.protocol !== 'javascript'
   );
 };
 
