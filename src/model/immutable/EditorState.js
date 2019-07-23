@@ -433,7 +433,7 @@ class EditorState {
       editorState.getDirectionMap(),
     );
 
-    return EditorState.set(editorState, {
+    const newEditorState = EditorState.set(editorState, {
       currentContent: newCurrentContent,
       directionMap,
       undoStack: undoStack.shift(),
@@ -444,6 +444,11 @@ class EditorState {
       nativelyRenderedContent: null,
       selection: currentContent.getSelectionBefore(),
     });
+
+    return EditorState.forceSelection(
+      newEditorState,
+      newCurrentContent.getSelectionBefore(),
+    );
   }
 
   /**
@@ -467,7 +472,7 @@ class EditorState {
       editorState.getDirectionMap(),
     );
 
-    return EditorState.set(editorState, {
+    const newEditorState = EditorState.set(editorState, {
       currentContent: newCurrentContent,
       directionMap,
       undoStack: editorState.getUndoStack().push(currentContent),
@@ -478,6 +483,11 @@ class EditorState {
       nativelyRenderedContent: null,
       selection: newCurrentContent.getSelectionAfter(),
     });
+
+    return EditorState.forceSelection(
+      newEditorState,
+      newCurrentContent.getSelectionAfter(),
+    );
   }
 
   /**
