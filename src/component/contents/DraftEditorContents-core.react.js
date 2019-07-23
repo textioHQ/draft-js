@@ -146,6 +146,7 @@ class DraftEditorContents extends React.Component<Props> {
 
     let currentDepth = null;
     let lastWrapperTemplate = null;
+    let lastCustomWrapperTemplate = null;
 
     for (let ii = 0; ii < blocksAsArray.length; ii++) {
       const block = blocksAsArray[ii];
@@ -153,11 +154,12 @@ class DraftEditorContents extends React.Component<Props> {
       const blockType = block.getType();
 
       const customRenderer = blockRendererFn(block);
-      let CustomComponent, customProps, customEditable;
+      let CustomComponent, customProps, customEditable, customWrapperTemplate;
       if (customRenderer) {
         CustomComponent = customRenderer.component;
         customProps = customRenderer.props;
         customEditable = customRenderer.editable;
+        customWrapperTemplate = customRenderer.wrapperTemplate;
       }
 
       const direction = textDirectionality
@@ -198,6 +200,7 @@ class DraftEditorContents extends React.Component<Props> {
       if (Element === 'li') {
         const shouldResetCount =
           lastWrapperTemplate !== wrapperTemplate ||
+          lastCustomWrapperTemplate !== customWrapperTemplate ||
           currentDepth === null ||
           depth > currentDepth;
         className = joinClasses(
@@ -230,24 +233,88 @@ class DraftEditorContents extends React.Component<Props> {
 
       processedBlocks.push({
         block: child,
-        wrapperTemplate,
         key,
         offsetKey,
+        wrapperTemplate,
+        customWrapperTemplate,
       });
 
-      if (wrapperTemplate) {
+      if (wrapperTemplate || customWrapperTemplate) {
         currentDepth = block.getDepth();
       } else {
         currentDepth = null;
       }
       lastWrapperTemplate = wrapperTemplate;
+      lastCustomWrapperTemplate = customWrapperTemplate;
     }
+
+    // Note on code below:
+    // processedBlocks will contain all merged blocks
+    // For example: header blocks,body blocks,and footer blocks will be merged into processedBlocks (in order)
+    // We need to manually group by type (header,body,footer) and apply any custom wrapper.
+    // Then we need group those blocks (i.e. header blocks) by any specific wrapping needed internally by Draft (wrapping <li>'s in a <ul>)
+    // We then put everything back together at the end (outputBlocks)
 
     // Group contiguous runs of blocks that have the same wrapperTemplate
     const outputBlocks = [];
     for (let ii = 0; ii < processedBlocks.length; ) {
       const info: any = processedBlocks[ii];
-      if (info.wrapperTemplate) {
+
+      // Group by customWrapperTemplate (if exists)
+      // Note: If we ever want to remove customWrapperTemplates, remove this block
+      // customWrapperTemplate will also wrap the internal wrapperTemplate by default
+      if (info.customWrapperTemplate) {
+        // Group by custom template
+        const blocksInCustomWrapper = [];
+        do {
+          blocksInCustomWrapper.push(processedBlocks[ii]);
+          ii++;
+        } while (
+          ii < processedBlocks.length &&
+          processedBlocks[ii].customWrapperTemplate ===
+            info.customWrapperTemplate
+        );
+
+        const blocksInInternalWrapper = [];
+        for (let jj = 0; jj < blocksInCustomWrapper.length; ) {
+          const accum = [];
+          const blockRef = blocksInCustomWrapper[jj];
+
+          if (blockRef.wrapperTemplate) {
+            do {
+              accum.push(blocksInCustomWrapper[jj].block);
+              jj++;
+            } while (
+              jj < blocksInCustomWrapper.length &&
+              blocksInCustomWrapper[jj].wrapperTemplate === blockRef.wrapperTemplate
+            );
+            const internalWrapperElement = React.cloneElement(
+              blockRef.wrapperTemplate, {
+                key: blockRef.key + '-wrap',
+                'data-offset-key': blockRef.offsetKey,
+              },
+              accum,
+            );
+            blocksInInternalWrapper.push(internalWrapperElement);
+          } else {
+            blocksInInternalWrapper.push(blockRef.block);
+            jj++;
+          }
+        }
+
+        // Finally wrap the grouped internally-wrapped elements into the customTemplateWrapper
+        const customWrapperElement = React.cloneElement(
+          info.customWrapperTemplate,
+          {
+            key: info.key + '-custom-wrap',
+            'data-offset-key': info.offsetKey,
+          },
+          blocksInInternalWrapper,
+        );
+        outputBlocks.push(customWrapperElement);
+
+        // If there's only a wrapperTemplate (internal wrapper), only group by that
+      } else if (info.wrapperTemplate) {
         const blocks = [];
         do {
           blocks.push(processedBlocks[ii].block);
