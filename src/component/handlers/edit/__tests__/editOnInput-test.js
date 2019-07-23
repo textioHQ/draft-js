@@ -43,7 +43,8 @@ function withGlobalGetSelectionAs(getSelectionValue = {}, callback) {
   }
 }
 
-test('restoreEditorDOM and keyCommandPlainBackspace are NOT called when the `inputType` is not from a backspace press', () => {
+
+test('restoreEditorDOM and keyCommandPlainBackspace NOT called when `inputType` is not from a backspace press', () => {
   const inputEvent = {
     nativeEvent: {inputType: 'insetText'},
   };

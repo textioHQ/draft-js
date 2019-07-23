@@ -34,7 +34,7 @@ test('fails if the firstChild of editorConainer is not an HTMLElement', () => {
   );
 });
 
-test(`returns the firstChild of editor.editorContainer's DOM node`, () => {
+test('returns the firstChild of editor.editorContainer\'s DOM node ', () => {
   const editor = {editorContainer: {}};
   const editableContainer = document.createElement('div');
   const editorContainerNode = {firstChild: editableContainer};
