@@ -38,6 +38,14 @@ const ComposedEntityMutability = require('ComposedEntityMutability');
  *   the entity from the entire range. Deleting characters within a segmented
  *   entity will delete only the segments affected by the deletion. Example:
  *   Facebook User mentions.
+ *
+ * `PLAIN`:
+ *   Plain entities lack the customized behavior of the other entity types, and
+ *   should be used when the desired behavior doesn 't fall cleanly into the use
+ *   cases of the other entity types.They don 't automatically expand like
+ *   mutable entities, and they aren't deleted like immutable or segmented
+ *   entities.They are designed to serve as a blank slate that custom behavior
+ *   can be build on top of.
  */
 
 export type DraftEntityMutability = $Keys<typeof ComposedEntityMutability>;
