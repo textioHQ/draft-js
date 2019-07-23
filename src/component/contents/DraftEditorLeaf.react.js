@@ -108,7 +108,15 @@ class DraftEditorLeaf extends React.Component<Props> {
       invariant(targetNode, 'Missing targetNode');
     }
 
-    setDraftEditorSelection(selection, targetNode, blockKey, start, end);
+    try {
+      setDraftEditorSelection(selection, targetNode, blockKey, start, end);
+    } catch (err) {
+      // Sometimes, setting the selection appears to fail on IE11 with different
+      // errors, specifically 800a025e as one example. In general, just catch
+      // this error and treat it as non-fatal. It is unfortunate that the DOM
+      // selection will not be correct, but this can be fixed by the user and
+      // then the editor can successfully recover.
+    }
   }
 
   shouldComponentUpdate(nextProps: Props): boolean {
