@@ -465,7 +465,7 @@ class DraftEditor extends React.Component<DraftEditorProps, State> {
   focus: (scrollPosition?: DraftScrollPosition) => void = (
     scrollPosition?: DraftScrollPosition,
   ): void => {
-    const {editorState} = this.props;
+    const editorState = this._latestEditorState;
     const alreadyHasFocus = editorState.getSelection().getHasFocus();
     const editorNode = this.editor;
 
