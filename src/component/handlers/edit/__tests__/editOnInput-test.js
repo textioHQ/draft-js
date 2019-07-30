@@ -1,17 +1,17 @@
-// /**
-//  * Copyright (c) Facebook, Inc. and its affiliates.
-//  *
-//  * This source code is licensed under the MIT license found in the
-//  * LICENSE file in the root directory of this source tree.
-//  *
-//  * @emails oncall+draft_js
-//  * @flow
-//  * @format
-//  */
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @emails oncall+draft_js
+ * @flow
+ * @format
+ */
 
-// 'use strict';
+'use strict';
 
-// jest.disableAutomock();
+jest.disableAutomock();
 
 // const ContentBlock = require('ContentBlock');
 // const ContentState = require('ContentState');
@@ -44,7 +44,7 @@
 // }
 
 
-// test('restoreEditorDOM/keyCommandPlainBackspace NOT called when `inputType` is not from backspace', () => {
+test('restoreEditorDOM/keyCommandPlainBackspace NOT called when `inputType` is not from backspace', () => {
 //   const inputEvent = {
 //     nativeEvent: {inputType: 'insetText'},
 //   };
@@ -69,7 +69,7 @@
 //     expect(editor.restoreEditorDOM).toHaveBeenCalledTimes(0);
 //     expect(editor.update).toHaveBeenCalledTimes(0);
 //   });
-// });
+});
 
 // test('restoreEditorDOM/keyCommandPlainBackspace are called when backspace is pressed', () => {
 //   const inputEvent = {
