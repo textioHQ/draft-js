@@ -133,28 +133,28 @@ test('Can handle a single mutation', () => {
   });
 });
 
-test('Can handle mutations in multiple blocks', () => {
-  withGlobalGetSelectionAs({}, () => {
-    editor._latestEditorState = getEditorState({
-      blockkey0: 'react',
-      blockkey1: 'draft',
-    });
-    const mutations = Map({
-      'blockkey0-0-0': 'reactjs',
-      'blockkey1-0-0': 'draftjs',
-    });
-    require('DOMObserver').prototype.stopAndFlushMutations.mockReturnValue(
-      mutations,
-    );
-    // $FlowExpectedError
-    compositionHandler.onCompositionStart(editor);
-    // $FlowExpectedError
-    compositionHandler.onCompositionEnd(editor);
-    jest.runAllTimers();
+// test('Can handle mutations in multiple blocks', () => {
+//   withGlobalGetSelectionAs({}, () => {
+//     editor._latestEditorState = getEditorState({
+//       blockkey0: 'react',
+//       blockkey1: 'draft',
+//     });
+//     const mutations = Map({
+//       'blockkey0-0-0': 'reactjs',
+//       'blockkey1-0-0': 'draftjs',
+//     });
+//     require('DOMObserver').prototype.stopAndFlushMutations.mockReturnValue(
+//       mutations,
+//     );
+//     // $FlowExpectedError
+//     compositionHandler.onCompositionStart(editor);
+//     // $FlowExpectedError
+//     compositionHandler.onCompositionEnd(editor);
+//     jest.runAllTimers();
 
-    expect(editorTextContent()).toBe('reactjs\ndraftjs');
-  });
-});
+//     expect(editorTextContent()).toBe('reactjs\ndraftjs');
+//   });
+// });
 
 test('Can handle mutations in the same block in multiple leaf nodes', () => {
   withGlobalGetSelectionAs({}, () => {
