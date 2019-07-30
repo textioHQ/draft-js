@@ -44,7 +44,7 @@
 // }
 
 
-// test('restoreEditorDOM and keyCommandPlainBackspace NOT called when `inputType` is not from a backspace press', () => {
+// test('restoreEditorDOM/keyCommandPlainBackspace NOT called when `inputType` is not from backspace', () => {
 //   const inputEvent = {
 //     nativeEvent: {inputType: 'insetText'},
 //   };
@@ -71,7 +71,7 @@
 //   });
 // });
 
-// test('restoreEditorDOM and keyCommandPlainBackspace are called when backspace is pressed', () => {
+// test('restoreEditorDOM/keyCommandPlainBackspace are called when backspace is pressed', () => {
 //   const inputEvent = {
 //     // When Backspace is pressed and input-type is supported, an event with
 //     // inputType === 'deleteContentBackward' is triggered by the browser.
