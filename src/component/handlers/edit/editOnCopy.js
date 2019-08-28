@@ -39,6 +39,10 @@ function editOnCopy(editor: DraftEditor, e: SyntheticClipboardEvent): void {
     const clipboardDataToSet = editor.props.convertBlockMapToClipboard(fragment);
     setClipboardData(e, editor, clipboardDataToSet);
   }
+
+  if (editor.props.onCopy) {
+    editor.props.onCopy(fragment);
+  }
 }
 
 module.exports = editOnCopy;

@@ -159,6 +159,7 @@ export type DraftEditorProps = {
   onDownArrow?: (e: SyntheticKeyboardEvent) => void,
 
   convertBlockMapToClipboard?: (blockMap: DraftBlockRenderMap) => Object,
+  onCopy?: (blockMap: DraftBlockRenderMap) => void,
 
   onBlur?: (e: SyntheticEvent) => void,
   onFocus?: (e: SyntheticEvent) => void,
