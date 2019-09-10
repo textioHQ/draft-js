@@ -240,7 +240,8 @@ function processInlineTag(
     currentStyle = currentStyle.withMutations(style => {
       const fontWeight = htmlElement.style.fontWeight;
       const fontStyle = htmlElement.style.fontStyle;
-      const textDecoration = htmlElement.style.textDecoration;
+      // text-decoration is CSS shorthand and can contain multiple decoration values
+      const textDecoration = htmlElement.style.textDecoration.split(' ');
 
       if (boldValues.indexOf(fontWeight) >= 0) {
         style.add('BOLD');
@@ -254,13 +255,13 @@ function processInlineTag(
         style.remove('ITALIC');
       }
 
-      if (textDecoration === 'underline') {
+      if (textDecoration.includes('underline')) {
         style.add('UNDERLINE');
       }
-      if (textDecoration === 'line-through') {
+      if (textDecoration.includes('line-through')) {
         style.add('STRIKETHROUGH');
       }
-      if (textDecoration === 'none') {
+      if (textDecoration.includes('none')) {
         style.remove('UNDERLINE');
         style.remove('STRIKETHROUGH');
       }
