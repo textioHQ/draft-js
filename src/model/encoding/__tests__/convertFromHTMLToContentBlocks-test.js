@@ -45,4 +45,17 @@ describe('convertFromHTMLToContentBlocks', () => {
     'p',
     'pre',
   ].forEach(tag => testConvertingAdjacentHtmlElementsToContentBlocks(tag));
+
+  it('applies textDecoration with multiple styles', () => {
+    const html = '<span style="text-decoration:underline line-through;">okurrrr</span>';
+    const blocks = convertFromHTMLToContentBlocks(html);
+    const charList = blocks.contentBlocks[0].characterList;
+
+    charList.forEach(charMetadata => {
+      const { style } = charMetadata;
+      expect(style.size).toBe(2);
+      expect(style.has('UNDERLINE')).toBeTruthy();
+      expect(style.has('STRIKETHROUGH')).toBeTruthy();
+    });
+  });
 });
