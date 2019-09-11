@@ -58,4 +58,15 @@ describe('convertFromHTMLToContentBlocks', () => {
       expect(style.has('STRIKETHROUGH')).toBeTruthy();
     });
   });
+
+  it('handles for undefined textDecoration', () => {
+    const html = '<span>bardi</span>';
+    const blocks = convertFromHTMLToContentBlocks(html);
+    const charList = blocks.contentBlocks[0].characterList;
+
+    charList.forEach(charMetadata => {
+      const { style } = charMetadata;
+      expect(style.size).toBe(0);
+    });
+  });
 });

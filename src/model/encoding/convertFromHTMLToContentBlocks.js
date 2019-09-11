@@ -238,10 +238,9 @@ function processInlineTag(
   } else if (node instanceof HTMLElement) {
     const htmlElement = node;
     currentStyle = currentStyle.withMutations(style => {
-      const fontWeight = htmlElement.style.fontWeight;
-      const fontStyle = htmlElement.style.fontStyle;
+      let { fontWeight, fontStyle, textDecoration } = htmlElement.style;
       // text-decoration is CSS shorthand and can contain multiple decoration values
-      const textDecoration = htmlElement.style.textDecoration.split(' ');
+      textDecoration = textDecoration && textDecoration.split(' ') || [];
 
       if (boldValues.indexOf(fontWeight) >= 0) {
         style.add('BOLD');
