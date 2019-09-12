@@ -14,7 +14,7 @@
 }
 
 .public/DraftEditor/content[contenteditable="true"] {
-  -webkit-user-modify: read-write-plaintext-only;
+  /* -webkit-user-modify: read-write-plaintext-only; */
 }
 
 .DraftEditor/root {
