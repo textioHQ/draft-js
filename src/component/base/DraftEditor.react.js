@@ -25,6 +25,7 @@ const DraftEditorCompositionHandler = require('DraftEditorCompositionHandler');
 const DraftEditorContents = require('DraftEditorContents.react');
 const DraftEditorDragHandler = require('DraftEditorDragHandler');
 const DraftEditorEditHandler = require('DraftEditorEditHandler');
+const DraftEditorEditAndroidHandler = require('DraftEditorEditAndroidHandler');
 const DraftEditorPlaceholder = require('DraftEditorPlaceholder.react');
 const EditorState = require('EditorState');
 const React = require('React');
@@ -50,10 +51,13 @@ const isIE = UserAgent.isBrowser('IE');
 // observe spellcheck behavior.
 const allowSpellCheck = !isIE;
 
+
+
 // Define a set of handler objects to correspond to each possible `mode`
 // of editor behavior.
 const handlerMap = {
-  'edit': DraftEditorEditHandler,
+  'edit': DraftEditorEditAndroidHandler,
+  // 'edit': DraftEditorEditHandler,
   'composite': DraftEditorCompositionHandler,
   'drag': DraftEditorDragHandler,
   'cut': null,
@@ -138,7 +142,7 @@ class DraftEditor extends React.Component {
   constructor(props: DraftEditorProps) {
     super(props);
 
-    this._useNativeBeforeInput = props.useNativeBeforeInputIfAble && areLevel2InputEventsSupported();
+    this._useNativeBeforeInput = true;//props.useNativeBeforeInputIfAble && areLevel2InputEventsSupported();
 
     this._blockSelectEvents = false;
     this._clipboard = null;
@@ -151,20 +155,20 @@ class DraftEditor extends React.Component {
 
     this._onBeforeInput = this._buildHandler('onBeforeInput');
     this._onBlur = this._buildHandler('onBlur');
-    this._onCharacterData = this._buildHandler('onCharacterData');
-    this._onCompositionEnd = this._buildHandler('onCompositionEnd');
-    this._onCompositionStart = this._buildHandler('onCompositionStart');
-    this._onCopy = this._buildHandler('onCopy');
-    this._onCut = this._buildHandler('onCut');
-    this._onDragEnd = this._buildHandler('onDragEnd');
-    this._onDragOver = this._buildHandler('onDragOver');
+    // this._onCharacterData = this._buildHandler('onCharacterData');
+    // this._onCompositionEnd = this._buildHandler('onCompositionEnd');
+    // this._onCompositionStart = this._buildHandler('onCompositionStart');
+    // this._onCopy = this._buildHandler('onCopy');
+    // this._onCut = this._buildHandler('onCut');
+    // this._onDragEnd = this._buildHandler('onDragEnd');
+    // this._onDragOver = this._buildHandler('onDragOver');
     this._onDragStart = this._buildHandler('onDragStart');
     this._onDrop = this._buildHandler('onDrop');
-    this._onInput = this._buildHandler('onInput');
+    // this._onInput = this._buildHandler('onInput');
     this._onFocus = this._buildHandler('onFocus');
-    this._onKeyDown = this._buildHandler('onKeyDown');
-    this._onKeyPress = this._buildHandler('onKeyPress');
-    this._onKeyUp = this._buildHandler('onKeyUp');
+    // this._onKeyDown = this._buildHandler('onKeyDown');
+    // this._onKeyPress = this._buildHandler('onKeyPress');
+    // this._onKeyUp = this._buildHandler('onKeyUp');
     this._onMouseDown = this._buildHandler('onMouseDown');
     this._onMouseUp = this._buildHandler('onMouseUp');
     this._onPaste = this._buildHandler('onPaste');
