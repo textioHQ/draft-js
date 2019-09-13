@@ -10,28 +10,34 @@
  * @flow
  */
 
-'use strict';
+"use strict";
 
-import type DraftEditor from 'DraftEditor.react';
-import type {DraftInlineStyle} from 'DraftInlineStyle';
+import type DraftEditor from "DraftEditor.react";
+import type { DraftInlineStyle } from "DraftInlineStyle";
 
+var ReactDOM = require("ReactDOM");
 
-var ReactDOM = require('ReactDOM');
+var BlockTree = require("BlockTree");
+var DraftModifier = require("DraftModifier");
+var EditorState = require("EditorState");
+var UserAgent = require("UserAgent");
+var getDraftEditorSelection = require("getDraftEditorSelection");
+const invariant = require("invariant");
+var UnicodeUtils = require("UnicodeUtils");
 
-var BlockTree = require('BlockTree');
-var DraftModifier = require('DraftModifier');
-var EditorState = require('EditorState');
-var UserAgent = require('UserAgent');
-var getDraftEditorSelection = require('getDraftEditorSelection');
-const invariant = require('invariant');
+var moveSelectionForward = require("moveSelectionForward");
+var removeTextWithStrategy = require("removeTextWithStrategy");
+var moveSelectionBackward = require("moveSelectionBackward");
+var removeTextWithStrategy = require("removeTextWithStrategy");
 
-var getEntityKeyForSelection = require('getEntityKeyForSelection');
-const isEventHandled = require('isEventHandled');
-var isSelectionAtLeafStart = require('isSelectionAtLeafStart');
-var nullthrows = require('nullthrows');
-var setImmediate = require('setImmediate');
-var editOnInput = require('editOnInput');
-var editOnSelect = require('editOnSelect');
+var getEntityKeyForSelection = require("getEntityKeyForSelection");
+var getDraftEditorSelectionWithNodes = require("getDraftEditorSelectionWithNodes");
+const isEventHandled = require("isEventHandled");
+var isSelectionAtLeafStart = require("isSelectionAtLeafStart");
+var nullthrows = require("nullthrows");
+var setImmediate = require("setImmediate");
+var editOnInput = require("editOnInput");
+var editOnSelect = require("editOnSelect");
 
 // When nothing is focused, Firefox regards two characters, `'` and `/`, as
 // commands that should open and focus the "quickfind" search bar. This should
@@ -40,17 +46,15 @@ var editOnSelect = require('editOnSelect');
 // This breaks the input. Special case these characters to ensure that when
 // they are typed, we prevent default on the event to make sure not to
 // trigger quickfind.
-var FF_QUICKFIND_CHAR = '\'';
-var FF_QUICKFIND_LINK_CHAR = '\/';
-var isFirefox = UserAgent.isBrowser('Firefox');
-var isIE = UserAgent.isBrowser('IE');
+var FF_QUICKFIND_CHAR = "'";
+var FF_QUICKFIND_LINK_CHAR = "/";
+var isFirefox = UserAgent.isBrowser("Firefox");
+var isIE = UserAgent.isBrowser("IE");
 
 function mustPreventDefaultForCharacter(character: string): boolean {
   return (
-    isFirefox && (
-      character == FF_QUICKFIND_CHAR ||
-      character == FF_QUICKFIND_LINK_CHAR
-    )
+    isFirefox &&
+    (character == FF_QUICKFIND_CHAR || character == FF_QUICKFIND_LINK_CHAR)
   );
 }
 
@@ -62,21 +66,21 @@ function replaceText(
   editorState: EditorState,
   text: string,
   inlineStyle: DraftInlineStyle,
-  entityKey: ?string,
+  entityKey: ?string
 ): EditorState {
   var contentState = DraftModifier.replaceText(
     editorState.getCurrentContent(),
     editorState.getSelection(),
     text,
     inlineStyle,
-    entityKey,
+    entityKey
   );
-  return EditorState.push(editorState, contentState, 'insert-characters');
+  return EditorState.push(editorState, contentState, "insert-characters");
 }
 
 const log = (s, ...args) => {
   console.log(`editOnBeforeInputAndroid:${s}`, ...args);
-}
+};
 
 /**
  * When `onBeforeInput` executes, the browser is attempting to insert a
@@ -88,186 +92,179 @@ const log = (s, ...args) => {
  * occurs on the relevant text nodes.
  */
 function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
-  log('top of function', editor, e, e.getTargetRanges());
+  log("top of function", editor, e, e.getTargetRanges());
 
-  const staticRange = e.getTargetRanges();
+  e.preventDefault();
+
+  const staticRanges = e.getTargetRanges();
   const { inputType, data } = e;
   const editorState = editor._latestEditorState;
   const nativeSelection = global.getSelection();
 
   // var editorState = editor.props.editorState;
   const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
-  invariant(editorNode, 'Missing editorNode');
-  invariant(editorNode.firstChild instanceof HTMLElement, 'editorNode.firstChild is not an HTMLElement');
-  const draftSelection = getDraftEditorSelection(editorState, editorNode.firstChild);
+  invariant(editorNode, "Missing editorNode");
+  invariant(
+    editorNode.firstChild instanceof HTMLElement,
+    "editorNode.firstChild is not an HTMLElement"
+  );
+  // implicitly
 
-  log('draftSelection', draftSelection);
+  const hasAffectedRanges =
+    Array.isArray(staticRanges) && staticRanges.length > 0;
 
-  switch (inputType) {
-    case 'insertText':
-    case 'insertCompositionText':
-    case 'insertFromComposition':
-      console.log('supported input type', inputType);
-      break;
-    default:
-      console.log('unhandled event', inputType, e);
+  // Compute
+  let affectedSelection = undefined;
+  if (hasAffectedRanges) {
+    log("Has affected ranges");
+    const [affectedRange] = staticRanges;
+    log("affected range observered", affectedRange);
+    affectedSelection = getDraftEditorSelectionWithNodes(
+      editorState,
+      editorNode.firstChild,
+      affectedRange.startContainer,
+      affectedRange.startOffset,
+      affectedRange.endContainer,
+      affectedRange.endOffset
+    );
+    log("affectedSelection", affectedSelection);
+  } else {
+    // If there is no affected range, we're just going to use the current native selection (implies we're about to do something additive)
+    log("No affected ranges");
+    const currentDraftSelectionFromCurrentNativeSelection = getDraftEditorSelection(
+      editorState,
+      editorNode.firstChild
+    );
+    affectedSelection = currentDraftSelectionFromCurrentNativeSelection;
   }
 
+  const isCollapsed = affectedSelection.selectionState.isCollapsed();
+  const editorStateWithCorrectSelection = EditorState.acceptSelection(
+    editorState,
+    affectedSelection.selectionState
+  );
+  const chars = data;
+
+  switch (inputType) {
+    case "insertText":
+    case "insertCompositionText":
+    case "insertFromComposition":
+      console.log("supported input type", inputType);
+      if (!chars) {
+        log("no chars to apply, returning", chars, e);
+        return;
+      }
+      const newEditorState = replaceText(
+        editorStateWithCorrectSelection,
+        chars,
+        editorStateWithCorrectSelection.getCurrentInlineStyle(),
+        getEntityKeyForSelection(
+          editorStateWithCorrectSelection.getCurrentContent(),
+          editorStateWithCorrectSelection.getSelection()
+        )
+      );
+      e.preventDefault();
+      editor.update(newEditorState);
+      return;
+    case "deleteContentBackward":
+      if (isCollapsed) {
+        // For some reason, this branch never seems to happen (selectionState.isCollapsed always returns false?)
+        // It's fine for now as keyCommandPlainDelete captures this too, just less specific.... /shrug
+        log("is collapsed, just doing a backspace command");
+        const newEditorStateWithBackspace = keyCommandPlainBackspace(
+          editorStateWithCorrectSelection
+        );
+        editor.update(newEditorStateWithBackspace);
+        return;
+      } else {
+        // uncollapsed
+        log("is uncollapsed, doing a full delete");
+        const newEditorStateWithDelete = keyCommandPlainDelete(
+          editorStateWithCorrectSelection
+        );
+        editor.update(newEditorStateWithDelete);
+        return;
+      }
+      break;
+    default:
+      log("unhandled event", inputType, e);
+  }
+
+  // Don't think is necessary anymore as we're deriving seleciton from beforeInput (?)
   // React doesn't fire a selection event until mouseUp, so it's possible to
   // click to change selection, hold the mouse down, and type a character
   // without React registering it. Let's sync the selection manually now.
-  editOnSelect(editor);
+  // editOnSelect(editor);
+  log("all done with beforeinput");
+}
 
-  e.preventDefault()
+/**
+ * Remove the selected range. If the cursor is collapsed, remove the following
+ * character. This operation is Unicode-aware, so removing a single character
+ * will remove a surrogate pair properly as well.
+ */
+function keyCommandPlainDelete(editorState: EditorState): EditorState {
+  var afterRemoval = removeTextWithStrategy(
+    editorState,
+    strategyState => {
+      var selection = strategyState.getSelection();
+      var content = strategyState.getCurrentContent();
+      var key = selection.getAnchorKey();
+      var offset = selection.getAnchorOffset();
+      var charAhead = content.getBlockForKey(key).getText()[offset];
+      return moveSelectionForward(
+        strategyState,
+        charAhead ? UnicodeUtils.getUTF16Length(charAhead, 0) : 1
+      );
+    },
+    "forward"
+  );
 
-  console.log('all done with beforeinput');
+  if (afterRemoval === editorState.getCurrentContent()) {
+    return editorState;
+  }
 
+  var selection = editorState.getSelection();
 
-  // var chars = e.data;
+  return EditorState.push(
+    editorState,
+    afterRemoval.set("selectionBefore", selection),
+    selection.isCollapsed() ? "delete-character" : "remove-range"
+  );
+}
 
-  // // In some cases (ex: IE ideographic space insertion) no character data
-  // // is provided. There's nothing to do when this happens.
-  // if (!chars) {
-  //   return;
-  // }
+/**
+ * Remove the selected range. If the cursor is collapsed, remove the preceding
+ * character. This operation is Unicode-aware, so removing a single character
+ * will remove a surrogate pair properly as well.
+ */
+function keyCommandPlainBackspace(editorState: EditorState): EditorState {
+  var afterRemoval = removeTextWithStrategy(
+    editorState,
+    strategyState => {
+      var selection = strategyState.getSelection();
+      var content = strategyState.getCurrentContent();
+      var key = selection.getAnchorKey();
+      var offset = selection.getAnchorOffset();
+      var charBehind = content.getBlockForKey(key).getText()[offset - 1];
+      return moveSelectionBackward(
+        strategyState,
+        charBehind ? UnicodeUtils.getUTF16Length(charBehind, 0) : 1
+      );
+    },
+    "backward"
+  );
 
-  // // Allow the top-level component to handle the insertion manually. This is
-  // // useful when triggering interesting behaviors for a character insertion,
-  // // Simple examples: replacing a raw text ':)' with a smile emoji or image
-  // // decorator, or setting a block to be a list item after typing '- ' at the
-  // // start of the block.
-  // if (
-  //   editor.props.handleBeforeInput &&
-  //   isEventHandled(editor.props.handleBeforeInput(chars, editorState))
-  // ) {
-  //   e.preventDefault();
-  //   return;
-  // }
+  if (afterRemoval === editorState.getCurrentContent()) {
+    return editorState;
+  }
 
-  // // If selection is collapsed, conditionally allow native behavior. This
-  // // reduces re-renders and preserves spellcheck highlighting. If the selection
-  // // is not collapsed, we will re-render.
-  // var selection = editorState.getSelection();
-  // var anchorKey = selection.getAnchorKey();
-
-  // if (!selection.isCollapsed()) {
-  //   e.preventDefault();
-  //   editor.update(
-  //     replaceText(
-  //       editorState,
-  //       chars,
-  //       editorState.getCurrentInlineStyle(),
-  //       getEntityKeyForSelection(
-  //         editorState.getCurrentContent(),
-  //         editorState.getSelection(),
-  //       ),
-  //     ),
-  //   );
-  //   return;
-  // }
-
-  // var newEditorState = replaceText(
-  //   editorState,
-  //   chars,
-  //   editorState.getCurrentInlineStyle(),
-  //   getEntityKeyForSelection(
-  //     editorState.getCurrentContent(),
-  //     editorState.getSelection(),
-  //   ),
-  // );
-
-  // // Bunch of different cases follow where we need to prevent native insertion.
-  // let mustPreventNative = false;
-  // if (!mustPreventNative) {
-  //   // Browsers tend to insert text in weird places in the DOM when typing at
-  //   // the start of a leaf, so we'll handle it ourselves.
-  //   mustPreventNative = isSelectionAtLeafStart(
-  //     editor._latestCommittedEditorState,
-  //   );
-  // }
-  // if (!mustPreventNative) {
-  //   // Chrome will also split up a node into two pieces if it contains a Tab
-  //   // char, for no explicable reason. Seemingly caused by this commit:
-  //   // https://chromium.googlesource.com/chromium/src/+/013ac5eaf3%5E%21/
-  //   const nativeSelection = global.getSelection();
-  //   // Selection is necessarily collapsed at this point due to earlier check.
-  //   if (
-  //     nativeSelection.anchorNode !== null &&
-  //     nativeSelection.anchorNode.nodeType === Node.TEXT_NODE
-  //   ) {
-  //     // See isTabHTMLSpanElement in chromium EditingUtilities.cpp.
-  //     const parentNode = nativeSelection.anchorNode.parentNode;
-  //     mustPreventNative =
-  //       parentNode.nodeName === 'SPAN' &&
-  //       parentNode.firstChild.nodeType === Node.TEXT_NODE &&
-  //       parentNode.firstChild.nodeValue.indexOf('\t') !== -1;
-  //   }
-  // }
-  // if (!mustPreventNative) {
-  //   // Check the old and new "fingerprints" of the current block to determine
-  //   // whether this insertion requires any addition or removal of text nodes,
-  //   // in which case we would prevent the native character insertion.
-  //   var originalFingerprint = BlockTree.getFingerprint(
-  //     editorState.getBlockTree(anchorKey),
-  //   );
-  //   var newFingerprint = BlockTree.getFingerprint(
-  //     newEditorState.getBlockTree(anchorKey),
-  //   );
-  //   mustPreventNative = originalFingerprint !== newFingerprint;
-  // }
-  // if (!mustPreventNative) {
-  //   mustPreventNative = mustPreventDefaultForCharacter(chars);
-  // }
-  // if (!mustPreventNative) {
-  //   mustPreventNative =
-  //     nullthrows(newEditorState.getDirectionMap()).get(anchorKey) !==
-  //     nullthrows(editorState.getDirectionMap()).get(anchorKey);
-  // }
-
-  // if (mustPreventNative) {
-  //   e.preventDefault();
-  //   editor.update(newEditorState);
-  //   return;
-  // }
-
-  // // We made it all the way! Let the browser do its thing and insert the char.
-  // newEditorState = EditorState.set(newEditorState, {
-  //   nativelyRenderedContent: newEditorState.getCurrentContent(),
-  // });
-
-  // editor._updatedNativeInsertionBlock = editorState.getCurrentContent()
-  //   .getBlockForKey(
-  //     editorState.getSelection().getAnchorKey(),
-  //   );
-
-  // // Allow the native insertion to occur and update our internal state to match.
-  // // If editor.update() does something like changing a typed 'x' to 'abc' in an
-  // // onChange() handler, we don't want our editOnInput() logic to squash that
-  // // change in favor of the typed 'x'. Set a flag to ignore the next
-  // // editOnInput() event in favor of what's in our internal state.
-  // editor.update(newEditorState, true);
-
-  // var editorStateAfterUpdate = editor._latestEditorState;
-  // var contentStateAfterUpdate = editorStateAfterUpdate.getCurrentContent();
-  // var expectedContentStateAfterUpdate = editorStateAfterUpdate
-  //   .getNativelyRenderedContent();
-
-  // if (
-  //   expectedContentStateAfterUpdate &&
-  //   expectedContentStateAfterUpdate === contentStateAfterUpdate
-  // ) {
-  //   if (isIE) {
-  //     setImmediate(() => {
-  //       editOnInput(editor);
-  //     });
-  //   }
-  // } else {
-  //   // Outside callers (via the editor.onChange prop) have changed the
-  //   // editorState. No longer allow native insertion.
-  //   e.preventDefault();
-  //   editor._updatedNativeInsertionBlock = null;
-  //   editor._renderNativeContent = false;
-  // }
+  var selection = editorState.getSelection();
+  return EditorState.push(
+    editorState,
+    afterRemoval.set("selectionBefore", selection),
+    selection.isCollapsed() ? "backspace-character" : "remove-range"
+  );
 }
 
 module.exports = editOnBeforeInputAndroid;
