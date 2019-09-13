@@ -21,5 +21,3 @@ suppress_comment=\\(.\\|\n\\)*\\$FlowFixMe\\($\\|[^(]\\|(\\(>=0\\.\\(2[0-8]\\|1[
 module.name_mapper='ReactDOM' -> 'react-dom'
 module.name_mapper='setImmediate' -> 'fbjs/lib/setImmediate'
 
-[version]
-^0.42.0
