@@ -1,43 +1,29 @@
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
- * @providesModule editOnBeforeInputAndroid
- * @flow
- */
-
 "use strict";
 
 import type DraftEditor from "DraftEditor.react";
 import type { DraftInlineStyle } from "DraftInlineStyle";
 
-var ReactDOM = require("ReactDOM");
+const ReactDOM = require("ReactDOM");
 
-var BlockTree = require("BlockTree");
-var DraftModifier = require("DraftModifier");
-var EditorState = require("EditorState");
-var UserAgent = require("UserAgent");
-var getDraftEditorSelection = require("getDraftEditorSelection");
+const BlockTree = require("BlockTree");
+const DraftModifier = require("DraftModifier");
+const EditorState = require("EditorState");
+const UserAgent = require("UserAgent");
+const getDraftEditorSelection = require("getDraftEditorSelection");
 const invariant = require("invariant");
-var UnicodeUtils = require("UnicodeUtils");
+const UnicodeUtils = require("UnicodeUtils");
 
-var moveSelectionForward = require("moveSelectionForward");
-var removeTextWithStrategy = require("removeTextWithStrategy");
-var moveSelectionBackward = require("moveSelectionBackward");
-var removeTextWithStrategy = require("removeTextWithStrategy");
+const moveSelectionForward = require("moveSelectionForward");
+const moveSelectionBackward = require("moveSelectionBackward");
+const removeTextWithStrategy = require("removeTextWithStrategy");
 
-var getEntityKeyForSelection = require("getEntityKeyForSelection");
-var getDraftEditorSelectionWithNodes = require("getDraftEditorSelectionWithNodes");
+const getEntityKeyForSelection = require("getEntityKeyForSelection");
+const getDraftEditorSelectionWithNodes = require("getDraftEditorSelectionWithNodes");
 const isEventHandled = require("isEventHandled");
-var isSelectionAtLeafStart = require("isSelectionAtLeafStart");
-var nullthrows = require("nullthrows");
-var setImmediate = require("setImmediate");
-var editOnInput = require("editOnInput");
-var editOnSelect = require("editOnSelect");
+const isSelectionAtLeafStart = require("isSelectionAtLeafStart");
+const nullthrows = require("nullthrows");
+const editOnInput = require("editOnInput");
+const editOnSelect = require("editOnSelect");
 
 // When nothing is focused, Firefox regards two characters, `'` and `/`, as
 // commands that should open and focus the "quickfind" search bar. This should
@@ -84,12 +70,7 @@ const log = (s, ...args) => {
 
 /**
  * When `onBeforeInput` executes, the browser is attempting to insert a
- * character into the editor. Apply this character data to the document,
- * allowing native insertion if possible.
- *
- * Native insertion is encouraged in order to limit re-rendering and to
- * preserve spellcheck highlighting, which disappears or flashes if re-render
- * occurs on the relevant text nodes.
+ * character into the editor. Apply this character data to the document
  */
 function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
   log("top of function", editor, e, e.getTargetRanges());
@@ -108,10 +89,9 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     editorNode.firstChild instanceof HTMLElement,
     "editorNode.firstChild is not an HTMLElement"
   );
-  // implicitly
 
   const hasAffectedRanges =
-    Array.isArray(staticRanges) && staticRanges.length > 0;
+    staticRanges && Array.isArray(staticRanges) && staticRanges.length > 0;
 
   // Compute
   let affectedSelection = undefined;
@@ -171,7 +151,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
         // For some reason, this branch never seems to happen (selectionState.isCollapsed always returns false?)
         // It's fine for now as keyCommandPlainDelete captures this too, just less specific.... /shrug
         log("is collapsed, just doing a backspace command");
-        const newEditorStateWithBackspace = keyCommandPlainBackspace(
+        const newEditorStateWithBackspace = handleBackspace(
           editorStateWithCorrectSelection
         );
         editor.update(newEditorStateWithBackspace);
@@ -187,7 +167,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
       }
       break;
     default:
-      log("unhandled event", inputType, e);
+      log("Unhandled input type", inputType, e);
   }
 
   // Don't think is necessary anymore as we're deriving seleciton from beforeInput (?)
@@ -195,15 +175,18 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
   // click to change selection, hold the mouse down, and type a character
   // without React registering it. Let's sync the selection manually now.
   // editOnSelect(editor);
-  log("all done with beforeinput");
+
+  log("Done with beforeinput handler, returning");
+  return;
 }
 
 /**
  * Remove the selected range. If the cursor is collapsed, remove the following
  * character. This operation is Unicode-aware, so removing a single character
  * will remove a surrogate pair properly as well.
+ * Code from keyCommandPlainDelete
  */
-function keyCommandPlainDelete(editorState: EditorState): EditorState {
+function handleDelete(editorState: EditorState): EditorState {
   var afterRemoval = removeTextWithStrategy(
     editorState,
     strategyState => {
@@ -237,8 +220,9 @@ function keyCommandPlainDelete(editorState: EditorState): EditorState {
  * Remove the selected range. If the cursor is collapsed, remove the preceding
  * character. This operation is Unicode-aware, so removing a single character
  * will remove a surrogate pair properly as well.
+ * Code from keyCommandPlainBackspace
  */
-function keyCommandPlainBackspace(editorState: EditorState): EditorState {
+function handleBackspace(editorState: EditorState): EditorState {
   var afterRemoval = removeTextWithStrategy(
     editorState,
     strategyState => {
