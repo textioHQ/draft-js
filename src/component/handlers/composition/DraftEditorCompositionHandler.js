@@ -45,7 +45,14 @@ let textInputData = '';
 
 var DraftEditorCompositionHandler = {
   onBeforeInput: function(editor: DraftEditor, e: SyntheticInputEvent): void {
-    textInputData = (textInputData || '') + e.data;
+    console.log('DraftEditorCompositionHandler:beforeinput', e);
+    console.log('DECH:beforeinput:e:staticranges', e.getTargetRanges());
+    // textInputData = (textInputData || '') + e.data;
+    if (e.inputType === 'insertText') {
+      textInputData = (textInputData || '') + e.data;
+      return;
+    }
+    textInputData = e.data || '';
   },
 
   /**
@@ -53,6 +60,7 @@ var DraftEditorCompositionHandler = {
    * mode. Continue the current composition session to prevent a re-render.
    */
   onCompositionStart: function(editor: DraftEditor): void {
+    console.log('DECH:onCompositionStart:triggered');
     stillComposing = true;
   },
 
@@ -128,13 +136,16 @@ var DraftEditorCompositionHandler = {
    * so we update to force it back to the correct place.
    */
   resolveComposition: function(editor: DraftEditor): void {
+    console.log('draft:resolveComposition:start');
     if (stillComposing) {
+      console.log('draft:resolveComposition:still composing, early return');
       return;
     }
 
     resolved = true;
     const composedChars = textInputData;
     textInputData = '';
+    console.log('draft:resolveComposition:composedChars', composedChars);
 
     const editorState = EditorState.set(editor._latestEditorState, {
       inCompositionMode: false,

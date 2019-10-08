@@ -156,8 +156,8 @@ class DraftEditor extends React.Component {
     this._onBeforeInput = this._buildHandler('onBeforeInput');
     this._onBlur = this._buildHandler('onBlur');
     // this._onCharacterData = this._buildHandler('onCharacterData');
-    // this._onCompositionEnd = this._buildHandler('onCompositionEnd');
-    // this._onCompositionStart = this._buildHandler('onCompositionStart');
+    this._onCompositionEnd = this._buildHandler('onCompositionEnd');
+    this._onCompositionStart = this._buildHandler('onCompositionStart');
     // this._onCopy = this._buildHandler('onCopy');
     // this._onCut = this._buildHandler('onCut');
     // this._onDragEnd = this._buildHandler('onDragEnd');
