@@ -25,7 +25,7 @@ function editOnCompositionStart(editor: DraftEditor, e: SyntheticEvent): void {
   editor.update(
     EditorState.set(editor._latestEditorState, {inCompositionMode: true}),
   );
-  console.warn('draft:editOnCompositionStart: entering composition mode');
+  console.warn('draft:editOnCompositionStart: entering composition mode', e);
   // Allow composition handler to interpret the compositionstart event
   editor._onCompositionStart(e);
 }

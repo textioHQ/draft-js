@@ -145,7 +145,7 @@ var DraftEditorCompositionHandler = {
     resolved = true;
     const composedChars = textInputData;
     textInputData = '';
-    console.log('draft:resolveComposition:composedChars', composedChars);
+    console.log(`draft:resolveComposition:composedChars:"${composedChars}"`);
 
     const editorState = EditorState.set(editor._latestEditorState, {
       inCompositionMode: false,
