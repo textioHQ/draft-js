@@ -17,6 +17,8 @@ import type DraftEditor from 'DraftEditor.react';
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
 const Keys = require('Keys');
+const DOMObserver = require('DOMObserver');
+const ReactDOM = require('ReactDOM');
 
 const getEntityKeyForSelection = require('getEntityKeyForSelection');
 const isSelectionAtLeafStart = require('isSelectionAtLeafStart');
@@ -42,6 +44,15 @@ const RESOLVE_DELAY = 20;
 let resolved = false;
 let stillComposing = false;
 let textInputData = '';
+let domObserver = null;
+
+function startDOMObserver(editor: DraftEditor) {
+  if (!domObserver) {
+    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
+    domObserver = new DOMObserver(editorNode);
+    domObserver.start();
+  }
+}
 
 var DraftEditorCompositionHandler = {
   onBeforeInput: function(editor: DraftEditor, e: SyntheticInputEvent): void {
@@ -62,6 +73,7 @@ var DraftEditorCompositionHandler = {
   onCompositionStart: function(editor: DraftEditor): void {
     console.log('DECH:onCompositionStart:triggered');
     stillComposing = true;
+    startDOMObserver(editor);
   },
 
   /**
@@ -140,6 +152,18 @@ var DraftEditorCompositionHandler = {
     if (stillComposing) {
       console.log('draft:resolveComposition:still composing, early return');
       return;
+    }
+
+    const mutations = domObserver && domObserver.stopAndFlushMutations();
+    domObserver = null;
+
+    if (mutations && !mutations.size) {
+      console.log('no mutations');
+    } else {
+      console.log('Looping through mutations!', mutations.size);
+      mutations.forEach((composedChars, offsetKey) => { 
+        console.log('mutation', composedChars, offsetKey);
+      });
     }
 
     resolved = true;
