@@ -20,6 +20,7 @@
   "repository": "facebook/draft-js",
   "license": "MIT",
   "scripts": {
+    "deploy": "npm run build && npm pack && s3-deploy *.tgz --region us-east-1 --bucket textio-web-deps",
     "prepublish": "npm run build",
     "pretest": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json",
     "build": "gulp",
@@ -78,6 +79,7 @@
     "react": "^16.8.0",
     "react-dom": "^16.8.0",
     "react-test-renderer": "^16.0.0",
+    "s3-deploy": "^1.4.0",
     "stats-webpack-plugin": "^0.6.2",
     "through2": "^2.0.1",
     "uglifyjs-webpack-plugin": "^1.1.6",
