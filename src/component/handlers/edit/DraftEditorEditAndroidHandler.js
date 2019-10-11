@@ -14,7 +14,7 @@
 
 const onBeforeInput = require('editOnBeforeInputAndroid');
 const onBlur = require('editOnBlur');
-const onCompositionStart = require('editOnCompositionStart');
+const onCompositionStart = require('editOnCompositionStartAndroid');
 const onCopy = require('editOnCopy');
 const onCut = require('editOnCut');
 const onDragOver = require('editOnDragOver');
@@ -30,8 +30,8 @@ const noop = () => {};
 // Noop everything except beforeInput and select...
 const DraftEditorEditAndroidHandler = {
   onBeforeInput,
+  onCompositionStart,
   onBlur: noop,
-  onCompositionStart: onCompositionStart,
   onCopy: noop,
   onCut: noop,
   onDragOver: noop,
@@ -40,7 +40,7 @@ const DraftEditorEditAndroidHandler = {
   onInput: noop,
   onKeyDown: noop,
   onPaste: noop,
-  onSelect,
+  // onSelect,
 };
 
 module.exports = DraftEditorEditAndroidHandler;

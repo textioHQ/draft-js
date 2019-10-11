@@ -26,6 +26,7 @@ const DraftEditorContents = require('DraftEditorContents.react');
 const DraftEditorDragHandler = require('DraftEditorDragHandler');
 const DraftEditorEditHandler = require('DraftEditorEditHandler');
 const DraftEditorEditAndroidHandler = require('DraftEditorEditAndroidHandler');
+const DraftEditorCompositionHandlerAndroid = require('DraftEditorCompositionHandlerAndroid');
 const DraftEditorPlaceholder = require('DraftEditorPlaceholder.react');
 const EditorState = require('EditorState');
 const React = require('React');
@@ -59,6 +60,7 @@ const handlerMap = {
   'edit': DraftEditorEditAndroidHandler,
   // 'edit': DraftEditorEditHandler,
   'composite': DraftEditorCompositionHandler,
+  'composite-android': DraftEditorCompositionHandlerAndroid,
   'drag': DraftEditorDragHandler,
   'cut': null,
   'copy': null,
