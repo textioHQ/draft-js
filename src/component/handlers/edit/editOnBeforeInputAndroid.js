@@ -59,7 +59,26 @@ function replaceText(
 }
 
 const log = (s, ...args) => {
-  console.log(`editOnBeforeInputAndroid:${s}`, ...args);
+  // console.log(`editOnBeforeInputAndroid:${s}`, ...args);
+};
+
+const logChanges = (editor, mutation) => {
+  const blocksBefore = editor._latestEditorState.getCurrentContent().getBlockMap();
+  const selectionBefore = editor._latestEditorState.getSelection();
+  mutation();
+  const blocksAfter = editor._latestEditorState.getCurrentContent().getBlockMap();
+  const selectionAfter = editor._latestEditorState.getSelection();
+
+  if (!blocksBefore.equals(blocksAfter)) {
+    console.log(
+      'Blocks Changed',
+      Object.values(blocksBefore.toJS()).map(v => `${v.key}: ${v.text}`),
+      Object.values(blocksAfter.toJS()).map(v => `${v.key}: ${v.text}`),
+    );
+  }
+  if (!selectionBefore.equals(selectionAfter)) {
+    console.log('Selection Changed', selectionBefore.toJS(), selectionAfter.toJS());
+  }
 };
 
 /**
@@ -73,15 +92,17 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     // Allow normal browser before for any composition events,
     // TODO: This is the hard part, we bail out here so that we
     // don't double
+    console.log('Ignoring ', e.inputType, e);
     return;
   }
 
-  e.preventDefault();
+  if (!e.cancelable) {
+    console.warn('Not cancelable', e.inputType, e);
+  }
 
   const staticRanges = e.getTargetRanges();
   const { inputType, data } = e;
   const editorState = editor._latestEditorState;
-  const nativeSelection = global.getSelection();
 
   // var editorState = editor.props.editorState;
   const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
@@ -128,8 +149,11 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
   const chars = data;
 
   switch (inputType) {
-    case 'insertText':
     case 'insertCompositionText':
+      console.log('Allowing insertCompositionText to pass through.');
+      return;
+
+    case 'insertText':
     case 'insertFromComposition':
       if (!chars) {
         log('no chars to apply, returning', chars, e);
@@ -145,7 +169,11 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
         ),
       );
 
-      editor.update(newEditorState);
+      logChanges(editor, () => {
+        e.preventDefault();
+        editor.update(EditorState.forceSelection(newEditorState, newEditorState.getSelection()));
+      });
+
       return;
 
     case 'deleteContentBackward':
@@ -153,24 +181,34 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     case 'deleteSoftLineBackward':
     case 'deleteContent':
     case 'deleteByCut':
-      editor.update(keyCommandPlainBackspace(editorStateWithCorrectSelection));
+      logChanges(editor, () => {
+        e.preventDefault();
+        editor.update(keyCommandPlainBackspace(editorStateWithCorrectSelection));
+      });
       return;
 
     case 'deleteContentForward':
     case 'deleteWordForward':
     case 'deleteSoftLineForward':
-      editor.update(keyCommandPlainDelete(editorStateWithCorrectSelection));
+      logChanges(editor, () => {
+        e.preventDefault();
+        editor.update(keyCommandPlainDelete(editorStateWithCorrectSelection));
+      });
       return;
 
     case 'insertLineBreak':
     case 'insertParagraph':
-      editor.update(keyCommandInsertNewline(editorStateWithCorrectSelection));
+      logChanges(editor, () => {
+        e.preventDefault();
+        editor.update(keyCommandInsertNewline(editorStateWithCorrectSelection));
+      });
       return;
 
     case 'insertFromPaste':
       // TODO pastes will always be plaintext until we handle the dataTransfer object
       const pasteChars = e.dataTransfer.getData('text/plain');
 
+      e.preventDefault();
       editor.update(
         replaceText(
           editorStateWithCorrectSelection,
