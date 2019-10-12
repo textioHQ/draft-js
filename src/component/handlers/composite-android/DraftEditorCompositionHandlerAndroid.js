@@ -16,12 +16,9 @@ import type DraftEditor from 'DraftEditor.react';
 
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
-const Keys = require('Keys');
-const DOMObserver = require('DOMObserver');
 const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
-const isSelectionAtLeafStart = require('isSelectionAtLeafStart');
 
 let compositionRange = undefined;
 let compositionText = undefined;
@@ -53,9 +50,8 @@ function replaceText(
     );
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
-  
+
 const getCompositionRange = (editor, text) => {
-  compositionText = text;
   if (!text) {
     // get Selection (Assuming editorState is correct…)
     //return editorState.getSelection();
@@ -65,7 +61,7 @@ const getCompositionRange = (editor, text) => {
     return draftSelection;
   } else {
     // get Selection for text
-    console.warn('THIS IS WRONG!');
+    console.warn('UPDATE IS NOT IMPLEMENTED YET!');
     const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
     const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
     console.log('Computed selection', draftSelection.toJS());
@@ -80,16 +76,19 @@ var DraftEditorCompositionHandler = {
    */
   onCompositionStart: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
     resetCompositionData();
-    compositionRange = getCompositionRange(editor, e.data);
+    compositionText = e.data;
+    compositionRange = getCompositionRange(editor, compositionText);
     console.log(`DECH:onCompositionStart "${compositionText}"`, compositionRange.toJS());
   },
 
   onCompositionUpdate: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
     // Make the update!
     if (!hasInsertedCompositionText) {
-      compositionRange = getCompositionRange(editor, e.data);
-      console.log(`DECH:onCompositionUpdate "${compositionText}"`, compositionRange.toJS());
+      console.log('Updating composition range!');
+      compositionText = e.data;
+      compositionRange = getCompositionRange(editor, compositionText);
     }
+    console.log(`DECH:onCompositionUpdate "${compositionText}"`, compositionRange.toJS());
   },
 
   onCompositionEnd: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
@@ -97,19 +96,21 @@ var DraftEditorCompositionHandler = {
     const newText = e.data;
     console.log(`DECH:onCompositionEnd compText:"${compositionText}", newText:"${newText}"`, compositionRange.toJS());
     if (newText === compositionText) {
-      console.log('WOULD NOT update draft with this range!', compositionRange.toJS());
+      const nextEditorState = EditorState.acceptSelection(editor._latestEditorState, compositionRange);
+      console.log('Skipping update, text has not changed');
       editor.setMode('edit');
       editor.update(
-            EditorState.set(editor._latestEditorState, {inCompositionMode: false}),
+            EditorState.set(nextEditorState, {inCompositionMode: false}),
         );
     } else {
-      console.log('WOULD update draft with this range!', compositionRange.toJS());
+      console.log('Updating Draft');
       const nextEditorState = replaceText(editor._latestEditorState, newText, compositionRange);
 
       editor.setMode('edit');
       editor.update(
         EditorState.set(nextEditorState, {inCompositionMode: false}),
       );
+
     }
     resetCompositionData();
     console.warn('Exiting composition mode', e);
@@ -117,9 +118,9 @@ var DraftEditorCompositionHandler = {
 
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
     if (e.inputType === 'insertCompositionText') {
-      console.log('insertCompositionText', e.data);
+      console.log('inserted composition text, will not update range anymore.', e.data);
+      hasInsertedCompositionText = true;
     }
-    hasInsertedCompositionText = true;
   },
 
 };
