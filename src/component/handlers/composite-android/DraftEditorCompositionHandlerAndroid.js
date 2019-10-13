@@ -55,6 +55,8 @@ const getCompositionRange = (editor, text) => {
   if (!text) {
     // get Selection (Assuming editorState is correct…)
     //return editorState.getSelection();
+
+    // Since we know editorState is often out of sync right now, derive from the DOM:
     const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
     const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
     console.log('Computed selection', draftSelection.toJS());
@@ -64,10 +66,45 @@ const getCompositionRange = (editor, text) => {
     console.warn('UPDATE IS NOT IMPLEMENTED YET!');
     const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
     const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
-    console.log('Computed selection', draftSelection.toJS());
-    return draftSelection;
+
+    const compositionRange = findCoveringIndex(editor._latestEditorState.getCurrentContent(), draftSelection, text);
+
+    console.log('Computed range', compositionRange.toJS());
+    return compositionRange;
   }
 };
+
+function findCoveringIndex(contentState, selection, text) {
+  if (!selection.isCollapsed()) {
+    console.warn('Expected a collapsed selection');
+    return selection;
+  }
+
+  const focusKey = selection.getFocusKey();
+  const index = selection.getFocusOffset();
+  const block = contentState.getBlockMap().get(focusKey);
+  const blockText = block.getText();
+  const length = text.length;
+
+  // NOTE: offset can actually be Math.max(index - length, 0) since you can't find a match before that,
+  //       and in that case you don't need a loop, you just need to validate that the match covers the index.
+  let offset = 0; 
+  while (true) {
+    offset = blockText.indexOf(text, offset);
+    if (offset === -1) {
+      break;
+    }
+    console.log('offset', offset, text, 'in', blockText, 'looking for index', index);
+    if (offset <= index && offset + length >= index) {
+      return selection
+        .set('anchorOffset', offset)
+        .set('focusOffset', offset + length); // TODO is this inclusive/exclusive?
+    }
+    offset += 1;
+  }
+  console.warn(`Could not find covering index for '${text}' in '${blockText}' covering index ${index}`);
+  return selection;
+}
 
 var DraftEditorCompositionHandler = {
   /**
