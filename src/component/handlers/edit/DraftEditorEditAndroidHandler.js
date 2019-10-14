@@ -31,6 +31,7 @@ const noop = () => {};
 const DraftEditorEditAndroidHandler = {
   onBeforeInput,
   onCompositionStart,
+  onSelect,
   onBlur: noop,
   onCopy: noop,
   onCut: noop,
@@ -40,7 +41,6 @@ const DraftEditorEditAndroidHandler = {
   onInput: noop,
   onKeyDown: noop,
   onPaste: noop,
-  // onSelect,
 };
 
 module.exports = DraftEditorEditAndroidHandler;
