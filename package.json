@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.10.74-spike-before-input",
+  "version": "0.10.74-spike-before-input.0",
   "keywords": [
     "draftjs",
     "editor",
