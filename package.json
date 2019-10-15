@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.10.72-topic-allow-mobile.1",
+  "version": "0.10.72-topic-cherry-pick",
   "keywords": [
     "draftjs",
     "editor",
