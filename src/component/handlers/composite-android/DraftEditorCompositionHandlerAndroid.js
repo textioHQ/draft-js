@@ -61,29 +61,24 @@ function replaceText(
 const getCompositionRange = (editor, text) => {
   if (!text) {
     // get Selection (Assuming editorState is correct…)
-    //return editorState.getSelection();
-
     // Since we know editorState is often out of sync right now, derive from the DOM:
     const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
     const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
-    console.log('Computed selection', draftSelection.toJS());
     return draftSelection;
   } else {
     // get Selection for text
-    // console.warn('UPDATE IS IMPLEMENTED!');
     const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
     const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
 
     const compositionRange = findCoveringIndex(editor._latestEditorState.getCurrentContent(), draftSelection, text);
 
-    console.log('Computed range', compositionRange.toJS());
     return compositionRange;
   }
 };
 
 function findCoveringIndex(contentState, selection, text) {
   if (!selection.isCollapsed()) {
-    console.warn('Expected a collapsed selection');
+    // Expected a collapsed selection, return early
     return selection;
   }
 
@@ -109,7 +104,6 @@ function findCoveringIndex(contentState, selection, text) {
     }
     offset += 1;
   }
-  console.warn(`Could not find covering index for '${text}' in '${blockText}' covering index ${index}`);
   return selection;
 }
 
@@ -122,7 +116,6 @@ var DraftEditorCompositionHandler = {
     resetCompositionData();
     compositionText = e.data;
     compositionRange = getCompositionRange(editor, compositionText);
-    console.log(`DECH:onCompositionStart "${compositionText}"`, compositionRange.toJS());
 
     // When user types on empty text, which is represented as BR, browsers will
     // replace BR with text node. Because React can not recognize outer change,
@@ -147,36 +140,27 @@ var DraftEditorCompositionHandler = {
   onCompositionUpdate: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
     // Make the update!
     if (!hasInsertedCompositionText) {
-      console.log('Updating composition range!');
       compositionText = e.data;
       compositionRange = getCompositionRange(editor, compositionText);
     }
-    console.log(`DECH:onCompositionUpdate "${compositionText}"`, compositionRange.toJS());
   },
 
   onCompositionEnd: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
     // Make the update!
     const newText = e.data;
-    console.log(`DECH:onCompositionEnd compText:"${compositionText}", newText:"${newText}"`, compositionRange.toJS());
     if (newText === compositionText) {
       const nextEditorState = EditorState.acceptSelection(editor._latestEditorState, compositionRange);
-      console.log('Skipping update, text has not changed');
       editor.setMode('edit');
       editor.update(
             EditorState.set(nextEditorState, {inCompositionMode: false}),
         );
     } else {
-      console.log('Updating Draft');
-
       // Replace the missing BR the browser removed if needed, so react doesn't explode.
       if (doesCompositionNeedBRReplacement) {
-        console.log('DECH:onCompositionEnd: replacing BR that was removed by browser so react doesnt freak out');
         brContainer.replaceChild(
           br,
           brContainer.firstChild,
         );
-      } else {
-        console.log('DECH:onCompositionEnd: Does not need BR replacement...');
       }
 
       const nextEditorState = replaceText(editor._latestEditorState, newText, compositionRange);
@@ -188,12 +172,10 @@ var DraftEditorCompositionHandler = {
 
     }
     resetCompositionData();
-    console.warn('Exiting composition mode', e);
   },
 
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
     if (e.inputType === 'insertCompositionText') {
-      console.log('inserted composition text, will not update range anymore.', e.data);
       hasInsertedCompositionText = true;
     }
   },

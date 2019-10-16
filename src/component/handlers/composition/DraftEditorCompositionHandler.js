@@ -56,9 +56,7 @@ function startDOMObserver(editor: DraftEditor) {
 
 var DraftEditorCompositionHandler = {
   onBeforeInput: function(editor: DraftEditor, e: SyntheticInputEvent): void {
-    console.log('DraftEditorCompositionHandler:beforeinput', e);
-    console.log('DECH:beforeinput:e:staticranges', e.getTargetRanges());
-    // textInputData = (textInputData || '') + e.data;
+    // If insertText event type fires here, that means we're at the end of a composition
     if (e.inputType === 'insertText') {
       textInputData = (textInputData || '') + e.data;
       return;
@@ -71,7 +69,6 @@ var DraftEditorCompositionHandler = {
    * mode. Continue the current composition session to prevent a re-render.
    */
   onCompositionStart: function(editor: DraftEditor): void {
-    console.log('DECH:onCompositionStart:triggered');
     stillComposing = true;
     startDOMObserver(editor);
   },
@@ -148,28 +145,16 @@ var DraftEditorCompositionHandler = {
    * so we update to force it back to the correct place.
    */
   resolveComposition: function(editor: DraftEditor): void {
-    console.log('draft:resolveComposition:start');
     if (stillComposing) {
-      console.log('draft:resolveComposition:still composing, early return');
       return;
     }
 
     const mutations = domObserver && domObserver.stopAndFlushMutations();
     domObserver = null;
 
-    if (mutations && !mutations.size) {
-      console.log('no mutations');
-    } else {
-      console.log('Looping through mutations!', mutations.size);
-      mutations.forEach((composedChars, offsetKey) => { 
-        console.log('mutation', composedChars, offsetKey);
-      });
-    }
-
     resolved = true;
     const composedChars = textInputData;
     textInputData = '';
-    console.log(`draft:resolveComposition:composedChars:"${composedChars}"`);
 
     const editorState = EditorState.set(editor._latestEditorState, {
       inCompositionMode: false,
