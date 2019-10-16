@@ -13,16 +13,7 @@
 'use strict';
 
 const onBeforeInput = require('editOnBeforeInputAndroid');
-const onBlur = require('editOnBlur');
-const onCompositionStart = require('editOnCompositionStartAndroid');
-const onCopy = require('editOnCopy');
-const onCut = require('editOnCut');
-const onDragOver = require('editOnDragOver');
-const onDragStart = require('editOnDragStart');
-const onFocus = require('editOnFocus');
-const onInput = require('editOnInput');
-const onKeyDown = require('editOnKeyDown');
-const onPaste = require('editOnPaste');
+const onCompositionStart = require('editOnCompositionStart');
 const onSelect = require('editOnSelect');
 
 const noop = () => {};
