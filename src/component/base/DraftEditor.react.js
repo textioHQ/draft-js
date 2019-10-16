@@ -47,20 +47,16 @@ const nullthrows = require('nullthrows');
 const areLevel2InputEventsSupported = require('areLevel2InputEventsSupported');
 
 const isIE = UserAgent.isBrowser('IE');
-
+const isAndroid = UserAgent.isPlatform('Android');
 // IE does not support the `input` event on contentEditable, so we can't
 // observe spellcheck behavior.
 const allowSpellCheck = !isIE;
 
-
-
 // Define a set of handler objects to correspond to each possible `mode`
 // of editor behavior.
 const handlerMap = {
-  'edit': DraftEditorEditAndroidHandler,
-  // 'edit': DraftEditorEditHandler,
-  'composite': DraftEditorCompositionHandler,
-  'composite-android': DraftEditorCompositionHandlerAndroid,
+  'edit': isAndroid ? DraftEditorEditAndroidHandler : DraftEditorEditHandler,
+  'composite': isAndroid ? DraftEditorCompositionHandlerAndroid : DraftEditorCompositionHandler,
   'drag': DraftEditorDragHandler,
   'cut': null,
   'copy': null,
@@ -145,7 +141,7 @@ class DraftEditor extends React.Component {
   constructor(props: DraftEditorProps) {
     super(props);
 
-    this._useNativeBeforeInput = true;//props.useNativeBeforeInputIfAble && areLevel2InputEventsSupported();
+    this._useNativeBeforeInput = (isAndroid || props.useNativeBeforeInputIfAble) && areLevel2InputEventsSupported();
 
     this._blockSelectEvents = false;
     this._clipboard = null;
