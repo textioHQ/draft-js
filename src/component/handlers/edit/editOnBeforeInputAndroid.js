@@ -5,7 +5,6 @@ import type { DraftInlineStyle } from 'DraftInlineStyle';
 
 const ReactDOM = require('ReactDOM');
 
-const BlockTree = require('BlockTree');
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
 const UserAgent = require('UserAgent');
@@ -18,25 +17,6 @@ const keyCommandInsertNewline = require('keyCommandInsertNewline');
 
 const getEntityKeyForSelection = require('getEntityKeyForSelection');
 const getDraftEditorSelectionWithNodes = require('getDraftEditorSelectionWithNodes');
-
-// When nothing is focused, Firefox regards two characters, `'` and `/`, as
-// commands that should open and focus the "quickfind" search bar. This should
-// *never* happen while a contenteditable is focused, but as of v28, it
-// sometimes does, even when the keypress event target is the contenteditable.
-// This breaks the input. Special case these characters to ensure that when
-// they are typed, we prevent default on the event to make sure not to
-// trigger quickfind.
-var FF_QUICKFIND_CHAR = "'";
-var FF_QUICKFIND_LINK_CHAR = '/';
-var isFirefox = UserAgent.isBrowser('Firefox');
-var isIE = UserAgent.isBrowser('IE');
-
-function mustPreventDefaultForCharacter(character: string): boolean {
-  return (
-    isFirefox &&
-    (character == FF_QUICKFIND_CHAR || character == FF_QUICKFIND_LINK_CHAR)
-  );
-}
 
 /**
  * Replace the current selection with the specified text string, with the
@@ -57,10 +37,6 @@ function replaceText(
   );
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
-
-const log = (s, ...args) => {
-  // console.log(`editOnBeforeInputAndroid:${s}`, ...args);
-};
 
 const logChanges = (editor, mutation) => {
   const blocksBefore = editor._latestEditorState.getCurrentContent().getBlockMap();
@@ -86,25 +62,17 @@ const logChanges = (editor, mutation) => {
  * character into the editor. Apply this character data to the document
  */
 function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
-  log('top of function', editor, e, e.getTargetRanges());
-
   if (e.isComposing && !e.cancelable) {
     // Allow normal browser before for any composition events,
     // TODO: This is the hard part, we bail out here so that we
     // don't double
-    console.log('Ignoring ', e.inputType, e);
     return;
-  }
-
-  if (!e.cancelable) {
-    console.warn('Not cancelable', e.inputType, e);
   }
 
   const staticRanges = e.getTargetRanges();
   const { inputType, data } = e;
   const editorState = editor._latestEditorState;
 
-  // var editorState = editor.props.editorState;
   const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
 
   invariant(editorNode, 'Missing editorNode');
@@ -119,9 +87,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
   // Compute
   let affectedSelection = undefined;
   if (hasAffectedRanges) {
-    log('Has affected ranges');
     const [affectedRange] = staticRanges;
-    log('affected range observered', affectedRange);
     affectedSelection = getDraftEditorSelectionWithNodes(
       editorState,
       editorNode.firstChild,
@@ -130,11 +96,9 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
       affectedRange.endContainer,
       affectedRange.endOffset,
     );
-    log('affectedSelection', affectedSelection);
   } else {
     // If there is no affected range, we're just going to use the current native selection
     // (implies we're about to do something additive)
-    log('No affected ranges');
     const currentDraftSelectionFromCurrentNativeSelection = getDraftEditorSelection(
       editorState,
       editorNode.firstChild,
@@ -149,14 +113,13 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
   const chars = data;
 
   switch (inputType) {
+    // Allowing insertCompositionText to pass through.
     case 'insertCompositionText':
-      console.log('Allowing insertCompositionText to pass through.');
       return;
 
     case 'insertText':
     case 'insertFromComposition':
       if (!chars) {
-        log('no chars to apply, returning', chars, e);
         return;
       }
       const newEditorState = replaceText(
@@ -205,7 +168,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
       return;
 
     case 'insertFromPaste':
-      // TODO pastes will always be plaintext until we handle the dataTransfer object
+      // TODO: pastes will always be plaintext until we handle the dataTransfer object
       const pasteChars = e.dataTransfer.getData('text/plain');
 
       e.preventDefault();
@@ -223,17 +186,9 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
       return;
 
     default:
-      log('Unhandled input type', inputType, e);
+      // TODO: Anything to do here?
+      return;
   }
-
-  // Don't think is necessary anymore as we're deriving seleciton from beforeInput (?)
-  // React doesn't fire a selection event until mouseUp, so it's possible to
-  // click to change selection, hold the mouse down, and type a character
-  // without React registering it. Let's sync the selection manually now.
-  // editOnSelect(editor);
-
-  log('Done with beforeinput handler, returning');
-  return;
 }
 
 module.exports = editOnBeforeInputAndroid;
