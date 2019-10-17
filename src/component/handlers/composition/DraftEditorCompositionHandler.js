@@ -17,8 +17,6 @@ import type DraftEditor from 'DraftEditor.react';
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
 const Keys = require('Keys');
-const DOMObserver = require('DOMObserver');
-const ReactDOM = require('ReactDOM');
 
 const getEntityKeyForSelection = require('getEntityKeyForSelection');
 const isSelectionAtLeafStart = require('isSelectionAtLeafStart');
@@ -44,15 +42,6 @@ const RESOLVE_DELAY = 20;
 let resolved = false;
 let stillComposing = false;
 let textInputData = '';
-let domObserver = null;
-
-function startDOMObserver(editor: DraftEditor) {
-  if (!domObserver) {
-    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
-    domObserver = new DOMObserver(editorNode);
-    domObserver.start();
-  }
-}
 
 var DraftEditorCompositionHandler = {
   onBeforeInput: function(editor: DraftEditor, e: SyntheticInputEvent): void {
@@ -70,7 +59,6 @@ var DraftEditorCompositionHandler = {
    */
   onCompositionStart: function(editor: DraftEditor): void {
     stillComposing = true;
-    startDOMObserver(editor);
   },
 
   /**
@@ -148,9 +136,6 @@ var DraftEditorCompositionHandler = {
     if (stillComposing) {
       return;
     }
-
-    const mutations = domObserver && domObserver.stopAndFlushMutations();
-    domObserver = null;
 
     resolved = true;
     const composedChars = textInputData;
