@@ -141,7 +141,7 @@ class DraftEditor extends React.Component {
   constructor(props: DraftEditorProps) {
     super(props);
 
-    this._useNativeBeforeInput = (isAndroid || props.useNativeBeforeInputIfAble) && areLevel2InputEventsSupported();
+    this._useNativeBeforeInput = isAndroid || (props.useNativeBeforeInputIfAble && areLevel2InputEventsSupported());
 
     this._blockSelectEvents = false;
     this._clipboard = null;
