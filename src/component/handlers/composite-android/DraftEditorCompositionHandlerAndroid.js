@@ -78,34 +78,36 @@ const getCompositionRange = (editor, text) => {
   }
 };
 
-function findCoveringIndex(contentState, selection, text) {
+function findCoveringIndex(contentState, selection, textToFind) {
   if (!selection.isCollapsed()) {
     // Expected a collapsed selection, return early
     return selection;
   }
 
-  const focusKey = selection.getFocusKey();
-  const index = selection.getFocusOffset();
-  const block = contentState.getBlockMap().get(focusKey);
+  const block = contentState.getBlockForKey(selection.getStartKey());
   const blockText = block.getText();
-  const length = text.length;
+  const selStartOffset = selection.getStartOffset();
+  const matchStartOffset = blockText.indexOf(
+    textToFind,
+    // The earliest textToFind could start is its length before the selection
+    selStartOffset - textToFind.length,
+  );
 
-  // NOTE: offset can actually be Math.max(index - length, 0) since you can't find a match before that,
-  //       and in that case you don't need a loop, you just need to validate that the match covers the index.
-  let offset = 0;
-  while (true) {
-    offset = blockText.indexOf(text, offset);
-    if (offset === -1) {
-      break;
-    }
-    console.log('offset', offset, text, 'in', blockText, 'looking for index', index);
-    if (offset <= index && offset + length >= index) {
-      return selection
-        .set('anchorOffset', offset)
-        .set('focusOffset', offset + length); // TODO is this inclusive/exclusive?
-    }
-    offset += 1;
+  if (
+    // Ensure the match exists and contains the selection
+    matchStartOffset > 0 &&
+    matchStartOffset <= selStartOffset &&
+    matchStartOffset + textToFind.length >= selStartOffset
+  ) {
+    return selection.merge({
+      anchorOffset: matchStartOffset,
+      focusOffset: matchStartOffset + textToFind.length,
+    });
   }
+
+  console.warn(
+    `findCoveringIndex: couldn't find index of '${textToFind}' in '${blockText}' after offset ${selStartOffset}!`,
+  );
   return selection;
 }
 
