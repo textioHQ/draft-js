@@ -19,6 +19,7 @@ const EditorState = require('EditorState');
 const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
+const ElementSnapshot = require('ElementSnapshot');
 
 let compositionRange = undefined;
 let compositionText = undefined;
@@ -35,6 +36,7 @@ const resetCompositionData = () => {
   doesCompositionNeedBRReplacement = false;
   brContainer = undefined;
   br = undefined;
+  DraftEditorCompositionHandler.snapshot = null;
 };
 
 /**
@@ -90,7 +92,7 @@ function findCoveringIndex(contentState, selection, text) {
 
   // NOTE: offset can actually be Math.max(index - length, 0) since you can't find a match before that,
   //       and in that case you don't need a loop, you just need to validate that the match covers the index.
-  let offset = 0; 
+  let offset = 0;
   while (true) {
     offset = blockText.indexOf(text, offset);
     if (offset === -1) {
@@ -108,6 +110,7 @@ function findCoveringIndex(contentState, selection, text) {
 }
 
 var DraftEditorCompositionHandler = {
+  snapshot: null,
   /**
    * A `compositionstart` event has fired while we're still in composition
    * mode. Continue the current composition session to prevent a re-render.
@@ -117,24 +120,8 @@ var DraftEditorCompositionHandler = {
     compositionText = e.data;
     compositionRange = getCompositionRange(editor, compositionText);
 
-    // When user types on empty text, which is represented as BR, browsers will
-    // replace BR with text node. Because React can not recognize outer change,
-    // we have to put BR immediately back manually.
-
-    // In composition mode, as soon as a character is inserted, the <br> node is removed.
-    // Thus, we do the inspection on compositionStart right before the text insertion
-    // Then, on composition end, we'll insert the <br> node back, right before the composition text is inserted. 
-    // (or should we do it after the text is inserted?)
-    const selection = global.getSelection();
-    const maybeBR = selection.anchorNode.childNodes[selection.anchorOffset];
-    const brIsGoingToBeReplacedWithText =
-      selection.anchorNode === selection.focusNode &&
-      maybeBR != null &&
-      maybeBR.nodeName === 'BR';
-
-    doesCompositionNeedBRReplacement = brIsGoingToBeReplacedWithText;
-    brContainer = selection.anchorNode;
-    br = maybeBR;
+    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
+    DraftEditorCompositionHandler.snapshot = new ElementSnapshot([editorNode]);
   },
 
   onCompositionUpdate: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
@@ -155,21 +142,17 @@ var DraftEditorCompositionHandler = {
             EditorState.set(nextEditorState, {inCompositionMode: false}),
         );
     } else {
-      // Replace the missing BR the browser removed if needed, so react doesn't explode.
-      if (doesCompositionNeedBRReplacement) {
-        brContainer.replaceChild(
-          br,
-          brContainer.firstChild,
-        );
-      }
+      DraftEditorCompositionHandler.snapshot.apply();
 
       const nextEditorState = replaceText(editor._latestEditorState, newText, compositionRange);
 
       editor.setMode('edit');
       editor.update(
-        EditorState.set(nextEditorState, {inCompositionMode: false}),
+        EditorState.forceSelection(
+          EditorState.set(nextEditorState, {inCompositionMode: false}),
+          nextEditorState.getSelection(),
+        ),
       );
-
     }
     resetCompositionData();
   },
