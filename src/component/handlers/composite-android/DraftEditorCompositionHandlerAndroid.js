@@ -24,18 +24,12 @@ const ElementSnapshot = require('ElementSnapshot');
 let compositionRange = undefined;
 let compositionText = undefined;
 let hasInsertedCompositionText = false;
-let doesCompositionNeedBRReplacement = false;
-let brContainer = undefined;
-let br = undefined;
 
 const resetCompositionData = () => {
   compositionRange = undefined;
   compositionText = undefined;
   hasInsertedCompositionText = false;
 
-  doesCompositionNeedBRReplacement = false;
-  brContainer = undefined;
-  br = undefined;
   DraftEditorCompositionHandler.snapshot = null;
 };
 
