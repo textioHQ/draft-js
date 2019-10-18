@@ -19,6 +19,7 @@ const EditorState = require('EditorState');
 const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
+const ElementSnapshot = require('ElementSnapshot');
 
 let compositionRange = undefined;
 let compositionText = undefined;
@@ -138,10 +139,7 @@ var DraftEditorCompositionHandler = {
 
       editor.setMode('edit');
       editor.update(
-        EditorState.forceSelection(
-          EditorState.set(nextEditorState, {inCompositionMode: false}),
-          nextEditorState.getSelection(),
-        ),
+        EditorState.set(nextEditorState, { inCompositionMode: false }),
       );
     }
     resetCompositionData();
