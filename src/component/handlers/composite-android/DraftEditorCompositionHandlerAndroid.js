@@ -89,7 +89,7 @@ function findCoveringIndex(contentState, selection, textToFind) {
 
   if (
     // Ensure the match exists and contains the selection
-    matchStartOffset > 0 &&
+    matchStartOffset >= 0 &&
     matchStartOffset <= selStartOffset &&
     matchStartOffset + textToFind.length >= selStartOffset
   ) {
