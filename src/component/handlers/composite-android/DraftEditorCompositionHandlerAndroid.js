@@ -19,7 +19,6 @@ const EditorState = require('EditorState');
 const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
-const ElementSnapshot = require('ElementSnapshot');
 
 let compositionRange = undefined;
 let compositionText = undefined;
@@ -115,9 +114,6 @@ var DraftEditorCompositionHandler = {
     resetCompositionData();
     compositionText = e.data;
     compositionRange = getCompositionRange(editor, compositionText);
-
-    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
-    DraftEditorCompositionHandler.snapshot = new ElementSnapshot([editorNode]);
   },
 
   onCompositionUpdate: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
@@ -138,8 +134,6 @@ var DraftEditorCompositionHandler = {
             EditorState.set(nextEditorState, {inCompositionMode: false}),
         );
     } else {
-      DraftEditorCompositionHandler.snapshot.apply();
-
       const nextEditorState = replaceText(editor._latestEditorState, newText, compositionRange);
 
       editor.setMode('edit');
