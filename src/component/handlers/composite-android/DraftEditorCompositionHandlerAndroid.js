@@ -23,14 +23,21 @@ const getDraftEditorSelection = require('getDraftEditorSelection');
 let compositionRange = undefined;
 let compositionText = undefined;
 let hasInsertedCompositionText = false;
+let hasMutation = false;
 
 const resetCompositionData = () => {
   compositionRange = undefined;
   compositionText = undefined;
   hasInsertedCompositionText = false;
-
-  DraftEditorCompositionHandler.snapshot = null;
+  hasMutation = false;
 };
+
+const handleMutations = records => {
+  hasMutation = !!records.length;
+  mutationObserver.disconnect();
+};
+
+const mutationObserver = new MutationObserver(handleMutations);
 
 /**
  * Replace the current selection with the specified text string, with the
@@ -105,19 +112,20 @@ function findCoveringIndex(contentState, selection, textToFind) {
 }
 
 var DraftEditorCompositionHandler = {
-  snapshot: null,
   /**
    * A `compositionstart` event has fired while we're still in composition
    * mode. Continue the current composition session to prevent a re-render.
    */
   onCompositionStart: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
     resetCompositionData();
+    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
+
+    mutationObserver.observe(editorNode, {childList: true, subtree: true});
     compositionText = e.data;
     compositionRange = getCompositionRange(editor, compositionText);
   },
 
   onCompositionUpdate: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
-    // Make the update!
     if (!hasInsertedCompositionText) {
       compositionText = e.data;
       compositionRange = getCompositionRange(editor, compositionText);
@@ -125,7 +133,10 @@ var DraftEditorCompositionHandler = {
   },
 
   onCompositionEnd: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
-    // Make the update!
+    if (!hasMutation) {
+      handleMutations(mutationObserver.takeRecords());
+    }
+
     const newText = e.data;
     if (newText === compositionText) {
       const nextEditorState = EditorState.acceptSelection(editor._latestEditorState, compositionRange);
@@ -134,8 +145,8 @@ var DraftEditorCompositionHandler = {
             EditorState.set(nextEditorState, {inCompositionMode: false}),
         );
     } else {
-      // TODO only restore editor dom when a node has been deleted.
-      const mustReset = true;
+      // If any children have been added/removed the reconciler will crash unless we restore the dom.
+      const mustReset = hasMutation;
       if (mustReset) {
         editor.restoreEditorDOM();
       }
@@ -149,6 +160,7 @@ var DraftEditorCompositionHandler = {
         forceSelection: true,
       } : {
         // pass in nativelyRenderedContent here?
+        forceSelection: true, // Not sure this is needed…
       };
       editor.update(
         EditorState.set(nextEditorState, {
