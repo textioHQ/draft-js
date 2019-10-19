@@ -19,7 +19,6 @@ const EditorState = require('EditorState');
 const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
-const ElementSnapshot = require('ElementSnapshot');
 
 let compositionRange = undefined;
 let compositionText = undefined;
@@ -135,11 +134,27 @@ var DraftEditorCompositionHandler = {
             EditorState.set(nextEditorState, {inCompositionMode: false}),
         );
     } else {
+      // TODO only restore editor dom when a node has been deleted.
+      const mustReset = true;
+      if (mustReset) {
+        editor.restoreEditorDOM();
+      }
+
       const nextEditorState = replaceText(editor._latestEditorState, newText, compositionRange);
 
       editor.setMode('edit');
+      const editorStateProps = mustReset ? {
+        // TODO this is done in the draft composition handler, but I am not sure we should.
+        nativelyRenderedContent: null,
+        forceSelection: true,
+      } : {
+        // pass in nativelyRenderedContent here?
+      };
       editor.update(
-        EditorState.set(nextEditorState, { inCompositionMode: false }),
+        EditorState.set(nextEditorState, {
+          inCompositionMode: false,
+          ...editorStateProps,
+        }),
       );
     }
     resetCompositionData();
