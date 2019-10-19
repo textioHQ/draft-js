@@ -61,6 +61,12 @@ function replaceText(
 }
 
 const getCompositionRange = (editor, text) => {
+  // Ocassionally a newline will get composed.  In this case, we want to strip it since
+  // we won't be able to match it in Draft, and it will get rewritten anyways.
+  if (text.endsWith('\n')) {
+    text = text.slice(0, text.length - 1);
+  }
+
   if (!text) {
     // get Selection (Assuming editorState is correct…)
     // Since we know editorState is often out of sync right now, derive from the DOM:
