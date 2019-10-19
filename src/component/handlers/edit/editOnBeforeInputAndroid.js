@@ -7,7 +7,6 @@ const ReactDOM = require('ReactDOM');
 
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
-const UserAgent = require('UserAgent');
 const getDraftEditorSelection = require('getDraftEditorSelection');
 const invariant = require('invariant');
 
