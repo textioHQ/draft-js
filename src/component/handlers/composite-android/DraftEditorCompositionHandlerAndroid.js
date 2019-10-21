@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @providesModule DraftEditorCompositionHandler
+ * @providesModule DraftEditorCompositionHandlerAndroid
+ * @typechecks
  * @flow
  */
 
@@ -26,6 +27,7 @@ let hasInsertedCompositionText = false;
 let hasMutation = false;
 
 const resetCompositionData = () => {
+  createMutationObserverIfUndefined();
   compositionRange = undefined;
   compositionText = undefined;
   hasInsertedCompositionText = false;
@@ -37,7 +39,14 @@ const handleMutations = records => {
   mutationObserver.disconnect();
 };
 
-const mutationObserver = new MutationObserver(handleMutations);
+let mutationObserver = undefined;
+
+// Need to create mutation observer on runtime, not compile time
+const createMutationObserverIfUndefined = () => {
+  if (!mutationObserver) {
+    mutationObserver = new window.MutationObserver(handleMutations);
+  }
+};
 
 /**
  * Replace the current selection with the specified text string, with the
@@ -117,7 +126,7 @@ function findCoveringIndex(contentState, selection, textToFind) {
   return selection;
 }
 
-var DraftEditorCompositionHandler = {
+var DraftEditorCompositionHandlerAndroid = {
   /**
    * A `compositionstart` event has fired while we're still in composition
    * mode. Continue the current composition session to prevent a re-render.
@@ -186,4 +195,4 @@ var DraftEditorCompositionHandler = {
 
 };
 
-module.exports = DraftEditorCompositionHandler;
+module.exports = DraftEditorCompositionHandlerAndroid;
