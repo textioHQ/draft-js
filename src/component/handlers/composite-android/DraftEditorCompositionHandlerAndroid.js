@@ -6,7 +6,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @providesModule DraftEditorCompositionHandler
+ * @providesModule DraftEditorCompositionHandlerAndroid
+ * @typechecks
  * @flow
  */
 
@@ -19,18 +20,32 @@ const EditorState = require('EditorState');
 const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
-const ElementSnapshot = require('ElementSnapshot');
 
 let compositionRange = undefined;
 let compositionText = undefined;
 let hasInsertedCompositionText = false;
+let hasMutation = false;
 
 const resetCompositionData = () => {
+  createMutationObserverIfUndefined();
   compositionRange = undefined;
   compositionText = undefined;
   hasInsertedCompositionText = false;
+  hasMutation = false;
+};
 
-  DraftEditorCompositionHandler.snapshot = null;
+const handleMutations = records => {
+  hasMutation = !!records.length;
+  mutationObserver.disconnect();
+};
+
+let mutationObserver = undefined;
+
+// Need to create mutation observer on runtime, not compile time
+const createMutationObserverIfUndefined = () => {
+  if (!mutationObserver) {
+    mutationObserver = new window.MutationObserver(handleMutations);
+  }
 };
 
 /**
@@ -55,6 +70,12 @@ function replaceText(
 }
 
 const getCompositionRange = (editor, text) => {
+  // Ocassionally a newline will get composed.  In this case, we want to strip it since
+  // we won't be able to match it in Draft, and it will get rewritten anyways.
+  if (text.endsWith('\n')) {
+    text = text.slice(0, text.length - 1);
+  }
+
   if (!text) {
     // get Selection (Assuming editorState is correct…)
     // Since we know editorState is often out of sync right now, derive from the DOM:
@@ -105,20 +126,21 @@ function findCoveringIndex(contentState, selection, textToFind) {
   return selection;
 }
 
-var DraftEditorCompositionHandler = {
-  snapshot: null,
+var DraftEditorCompositionHandlerAndroid = {
   /**
    * A `compositionstart` event has fired while we're still in composition
    * mode. Continue the current composition session to prevent a re-render.
    */
   onCompositionStart: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
     resetCompositionData();
+    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
+
+    mutationObserver.observe(editorNode, {childList: true, subtree: true});
     compositionText = e.data;
     compositionRange = getCompositionRange(editor, compositionText);
   },
 
   onCompositionUpdate: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
-    // Make the update!
     if (!hasInsertedCompositionText) {
       compositionText = e.data;
       compositionRange = getCompositionRange(editor, compositionText);
@@ -126,7 +148,10 @@ var DraftEditorCompositionHandler = {
   },
 
   onCompositionEnd: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
-    // Make the update!
+    if (!hasMutation) {
+      handleMutations(mutationObserver.takeRecords());
+    }
+
     const newText = e.data;
     if (newText === compositionText) {
       const nextEditorState = EditorState.acceptSelection(editor._latestEditorState, compositionRange);
@@ -135,11 +160,28 @@ var DraftEditorCompositionHandler = {
             EditorState.set(nextEditorState, {inCompositionMode: false}),
         );
     } else {
+      // If any children have been added/removed the reconciler will crash unless we restore the dom.
+      const mustReset = hasMutation;
+      if (mustReset) {
+        editor.restoreEditorDOM();
+      }
+
       const nextEditorState = replaceText(editor._latestEditorState, newText, compositionRange);
 
       editor.setMode('edit');
+      const editorStateProps = mustReset ? {
+        // TODO this is done in the draft composition handler, but I am not sure we should.
+        nativelyRenderedContent: null,
+        forceSelection: true,
+      } : {
+        // pass in nativelyRenderedContent here?
+        forceSelection: true, // Not sure this is needed…
+      };
       editor.update(
-        EditorState.set(nextEditorState, { inCompositionMode: false }),
+        EditorState.set(nextEditorState, {
+          inCompositionMode: false,
+          ...editorStateProps,
+        }),
       );
     }
     resetCompositionData();
@@ -153,4 +195,4 @@ var DraftEditorCompositionHandler = {
 
 };
 
-module.exports = DraftEditorCompositionHandler;
+module.exports = DraftEditorCompositionHandlerAndroid;
