@@ -58,13 +58,11 @@ const logChanges = (editor, mutation) => {
 
 /**
  * When `onBeforeInput` executes, the browser is attempting to insert a
- * character into the editor. Apply this character data to the document
+ * character into the editor. Apply this character data to the document.
  */
 function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
   if (e.isComposing && !e.cancelable) {
     // Allow normal browser before for any composition events,
-    // TODO: This is the hard part, we bail out here so that we
-    // don't double
     return;
   }
 
@@ -190,7 +188,6 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
       return;
 
     default:
-      // TODO: Anything to do here?
       return;
   }
 }

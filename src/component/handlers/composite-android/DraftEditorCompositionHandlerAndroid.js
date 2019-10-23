@@ -85,13 +85,13 @@ const getCompositionRange = (editor, text) => {
     const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
     const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
 
-    const compositionRange = findCoveringIndex(editor._latestEditorState.getCurrentContent(), draftSelection, text);
+    const compositionRange = findCompositionWordRange(editor._latestEditorState.getCurrentContent(), draftSelection, text);
 
     return compositionRange;
   }
 };
 
-function findCoveringIndex(contentState, selection, textToFind) {
+function findCompositionWordRange(contentState, selection, textToFind) {
   if (!selection.isCollapsed()) {
     // Expected a collapsed selection, return early
     return selection;
@@ -119,7 +119,7 @@ function findCoveringIndex(contentState, selection, textToFind) {
   }
 
   console.warn(
-    `findCoveringIndex: couldn't find index of '${textToFind}' in '${blockText}' after offset ${selStartOffset}!`,
+    `findCompositionWordRange: couldn't find index of '${textToFind}' in '${blockText}' after offset ${selStartOffset}!`,
   );
   return selection;
 }
