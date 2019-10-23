@@ -37,25 +37,6 @@ function replaceText(
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
 
-const logChanges = (editor, mutation) => {
-  const blocksBefore = editor._latestEditorState.getCurrentContent().getBlockMap();
-  const selectionBefore = editor._latestEditorState.getSelection();
-  mutation();
-  const blocksAfter = editor._latestEditorState.getCurrentContent().getBlockMap();
-  const selectionAfter = editor._latestEditorState.getSelection();
-
-  if (!blocksBefore.equals(blocksAfter)) {
-    console.log(
-      'Blocks Changed',
-      Object.values(blocksBefore.toJS()).map(v => `${v.key}: ${v.text}`),
-      Object.values(blocksAfter.toJS()).map(v => `${v.key}: ${v.text}`),
-    );
-  }
-  if (!selectionBefore.equals(selectionAfter)) {
-    console.log('Selection Changed', selectionBefore.toJS(), selectionAfter.toJS());
-  }
-};
-
 /**
  * When `onBeforeInput` executes, the browser is attempting to insert a
  * character into the editor. Apply this character data to the document.
@@ -129,10 +110,8 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
         ),
       );
 
-      logChanges(editor, () => {
-        e.preventDefault();
-        editor.update(EditorState.forceSelection(newEditorState, newEditorState.getSelection()));
-      });
+      e.preventDefault();
+      editor.update(EditorState.forceSelection(newEditorState, newEditorState.getSelection()));
 
       return;
 
@@ -141,32 +120,26 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     case 'deleteSoftLineBackward':
     case 'deleteContent':
     case 'deleteByCut':
-      logChanges(editor, () => {
-        e.preventDefault();
-        editor.update(keyCommandPlainBackspace(editorStateWithCorrectSelection));
-      });
+      e.preventDefault();
+      editor.update(keyCommandPlainBackspace(editorStateWithCorrectSelection));
       return;
 
     case 'deleteContentForward':
     case 'deleteWordForward':
     case 'deleteSoftLineForward':
-      logChanges(editor, () => {
-        e.preventDefault();
-        editor.update(keyCommandPlainDelete(editorStateWithCorrectSelection));
-      });
+      e.preventDefault();
+      editor.update(keyCommandPlainDelete(editorStateWithCorrectSelection));
       return;
 
     case 'insertLineBreak':
     case 'insertParagraph':
-      logChanges(editor, () => {
-        e.preventDefault();
-        const newState = keyCommandInsertNewline(
-          editorStateWithCorrectSelection,
-        );
-        editor.update(
-          EditorState.forceSelection(newState, newState.getSelection()),
-        );
-      });
+      e.preventDefault();
+      const newState = keyCommandInsertNewline(
+        editorStateWithCorrectSelection,
+      );
+      editor.update(
+        EditorState.forceSelection(newState, newState.getSelection()),
+      );
       return;
 
     case 'insertFromPaste':
