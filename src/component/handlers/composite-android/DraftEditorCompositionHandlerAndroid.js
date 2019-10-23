@@ -56,16 +56,14 @@ function replaceText(
     editorState: EditorState,
     text: string,
     compositionRange: SelectionState,
-    // inlineStyle: DraftInlineStyle,
-    // entityKey: ?string,
+    inlineStyle: DraftInlineStyle,
   ): EditorState {
-  var contentState = DraftModifier.replaceText(
+  const contentState = DraftModifier.replaceText(
       editorState.getCurrentContent(),
       compositionRange,
       text,
-    //   inlineStyle,
-    //   entityKey,
-    );
+      inlineStyle,
+  );
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
 
@@ -166,17 +164,19 @@ var DraftEditorCompositionHandlerAndroid = {
         editor.restoreEditorDOM();
       }
 
-      const nextEditorState = replaceText(editor._latestEditorState, newText, compositionRange);
+      const nextEditorState = replaceText(
+        editor._latestEditorState,
+        newText,
+        compositionRange,
+        editor._latestEditorState.getCurrentInlineStyle(),
+      );
 
       editor.setMode('edit');
       const editorStateProps = mustReset ? {
         // TODO this is done in the draft composition handler, but I am not sure we should.
         nativelyRenderedContent: null,
         forceSelection: true,
-      } : {
-        // pass in nativelyRenderedContent here?
-        forceSelection: true, // Not sure this is needed…
-      };
+      } : {};
       editor.update(
         EditorState.set(nextEditorState, {
           inCompositionMode: false,

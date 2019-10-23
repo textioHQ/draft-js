@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.10.74-topic-before-input.6",
+  "version": "0.10.74",
   "keywords": [
     "draftjs",
     "editor",
@@ -24,7 +24,7 @@
     "pretest": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json",
     "build": "gulp",
     "postbuild": "node node_modules/fbjs-scripts/node/check-lib-requires.js lib",
-    "lint": "echo 'skipping'",
+    "lint": "eslint .",
     "format": "eslint . --fix",
     "flow": "flow src",
     "test": "NODE_ENV=test jest -i",
