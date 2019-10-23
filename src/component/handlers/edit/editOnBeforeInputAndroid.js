@@ -162,7 +162,12 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     case 'insertParagraph':
       logChanges(editor, () => {
         e.preventDefault();
-        editor.update(keyCommandInsertNewline(editorStateWithCorrectSelection));
+        const newState = keyCommandInsertNewline(
+          editorStateWithCorrectSelection,
+        );
+        editor.update(
+          EditorState.forceSelection(newState, newState.getSelection()),
+        );
       });
       return;
 
