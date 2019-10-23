@@ -85,7 +85,11 @@ const getCompositionRange = (editor, text) => {
     const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
     const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
 
-    const compositionRange = findCompositionWordRange(editor._latestEditorState.getCurrentContent(), draftSelection, text);
+    const compositionRange = findCompositionWordRange(
+      editor._latestEditorState.getCurrentContent(),
+      draftSelection,
+      text,
+    );
 
     return compositionRange;
   }
@@ -118,9 +122,8 @@ function findCompositionWordRange(contentState, selection, textToFind) {
     });
   }
 
-  console.warn(
-    `findCompositionWordRange: couldn't find index of '${textToFind}' in '${blockText}' after offset ${selStartOffset}!`,
-  );
+  // eslint-disable-next-line max-len
+  console.warn(`findCompositionWordRange: couldn't find index of '${textToFind}' in '${blockText}' after offset ${selStartOffset}!`);
   return selection;
 }
 
