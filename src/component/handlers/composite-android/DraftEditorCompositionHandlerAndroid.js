@@ -14,6 +14,9 @@
 'use strict';
 
 import type DraftEditor from 'DraftEditor.react';
+import type ContentState from 'ContentState';
+import type SelectionState from 'SelectionState';
+import type { DraftInlineStyle } from 'DraftInlineStyle';
 
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
@@ -67,7 +70,19 @@ function replaceText(
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
 
-const getCompositionRange = (editor, text) => {
+const getEditorNode = (editor: DraftEditor) =>
+  ReactDOM.findDOMNode(editor.refs.editorContainer);
+
+const deriveSelectionFromDOM = (editor: DraftEditor): SelectionState => {
+  const editorNode = getEditorNode(editor);
+  const draftSelection = getDraftEditorSelection(
+    editor._latestEditorState,
+    editorNode,
+  ).selectionState;
+  return draftSelection;
+};
+
+const getCompositionRange = (editor: DraftEditor, text: string): SelectionState => {
   // Ocassionally a newline will get composed.  In this case, we want to strip it since
   // we won't be able to match it in Draft, and it will get rewritten anyways.
   if (text.endsWith('\n')) {
@@ -75,16 +90,10 @@ const getCompositionRange = (editor, text) => {
   }
 
   if (!text) {
-    // get Selection (Assuming editorState is correct…)
-    // Since we know editorState is often out of sync right now, derive from the DOM:
-    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
-    const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
-    return draftSelection;
+    // The selection on editorState is likely out-of-sync, recompute it from the DOM
+    return deriveSelectionFromDOM(editor);
   } else {
-    // get Selection for text
-    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
-    const draftSelection = getDraftEditorSelection(editor._latestEditorState, editorNode).selectionState;
-
+    const draftSelection = deriveSelectionFromDOM(editor);
     const compositionRange = findCompositionWordRange(
       editor._latestEditorState.getCurrentContent(),
       draftSelection,
@@ -95,7 +104,11 @@ const getCompositionRange = (editor, text) => {
   }
 };
 
-function findCompositionWordRange(contentState, selection, textToFind) {
+function findCompositionWordRange(
+  contentState: ContentState,
+  selection: SelectionState,
+  textToFind: string,
+) {
   if (!selection.isCollapsed()) {
     // Expected a collapsed selection, return early
     return selection;
@@ -127,39 +140,58 @@ function findCompositionWordRange(contentState, selection, textToFind) {
   return selection;
 }
 
+
 var DraftEditorCompositionHandlerAndroid = {
+  onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
+    if (e.inputType === 'insertCompositionText') {
+      hasInsertedCompositionText = true;
+    }
+  },
+
   /**
    * A `compositionstart` event has fired while we're still in composition
    * mode. Continue the current composition session to prevent a re-render.
    */
-  onCompositionStart: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
+  onCompositionStart: function(
+    editor: DraftEditor,
+    e: SyntheticCompositionEvent,
+  ): void {
     resetCompositionData();
-    const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
+    const editorNode = getEditorNode(editor);
 
-    mutationObserver.observe(editorNode, {childList: true, subtree: true});
+    mutationObserver.observe(editorNode, { childList: true, subtree: true });
     compositionText = e.data;
     compositionRange = getCompositionRange(editor, compositionText);
   },
 
-  onCompositionUpdate: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
+  onCompositionUpdate: function(
+    editor: DraftEditor,
+    e: SyntheticCompositionEvent,
+  ): void {
     if (!hasInsertedCompositionText) {
       compositionText = e.data;
       compositionRange = getCompositionRange(editor, compositionText);
     }
   },
 
-  onCompositionEnd: function(editor: DraftEditor, e: SyntheticCompositionEvent): void {
+  onCompositionEnd: function(
+    editor: DraftEditor,
+    e: SyntheticCompositionEvent,
+  ): void {
     if (!hasMutation) {
       handleMutations(mutationObserver.takeRecords());
     }
 
     const newText = e.data;
     if (newText === compositionText) {
-      const nextEditorState = EditorState.acceptSelection(editor._latestEditorState, compositionRange);
+      const nextEditorState = EditorState.acceptSelection(
+        editor._latestEditorState,
+        compositionRange,
+      );
       editor.setMode('edit');
       editor.update(
-            EditorState.set(nextEditorState, {inCompositionMode: false}),
-        );
+        EditorState.set(nextEditorState, { inCompositionMode: false }),
+      );
     } else {
       // If any children have been added/removed the reconciler will crash unless we restore the dom.
       const mustReset = hasMutation;
@@ -176,7 +208,6 @@ var DraftEditorCompositionHandlerAndroid = {
 
       editor.setMode('edit');
       const editorStateProps = mustReset ? {
-        // TODO this is done in the draft composition handler, but I am not sure we should.
         nativelyRenderedContent: null,
         forceSelection: true,
       } : {};
@@ -188,12 +219,6 @@ var DraftEditorCompositionHandlerAndroid = {
       );
     }
     resetCompositionData();
-  },
-
-  onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
-    if (e.inputType === 'insertCompositionText') {
-      hasInsertedCompositionText = true;
-    }
   },
 
 };
