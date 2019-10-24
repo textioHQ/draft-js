@@ -96,7 +96,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
       return;
 
     case 'insertText':
-    case 'insertFromComposition':
+    case 'insertFromComposition': {
       if (!chars) {
         return;
       }
@@ -114,25 +114,28 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
       editor.update(EditorState.forceSelection(newEditorState, newEditorState.getSelection()));
 
       return;
+    }
 
     case 'deleteContentBackward':
     case 'deleteWordBackward':
     case 'deleteSoftLineBackward':
     case 'deleteContent':
-    case 'deleteByCut':
+    case 'deleteByCut': {
       e.preventDefault();
       editor.update(keyCommandPlainBackspace(editorStateWithCorrectSelection));
       return;
+    }
 
     case 'deleteContentForward':
     case 'deleteWordForward':
-    case 'deleteSoftLineForward':
+    case 'deleteSoftLineForward': {
       e.preventDefault();
       editor.update(keyCommandPlainDelete(editorStateWithCorrectSelection));
       return;
+    }
 
     case 'insertLineBreak':
-    case 'insertParagraph':
+    case 'insertParagraph': {
       e.preventDefault();
       const newState = keyCommandInsertNewline(
         editorStateWithCorrectSelection,
@@ -141,8 +144,9 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
         EditorState.forceSelection(newState, newState.getSelection()),
       );
       return;
+    }
 
-    case 'insertFromPaste':
+    case 'insertFromPaste': {
       // TODO: pastes will always be plaintext until we handle the dataTransfer object
       const pasteChars = e.dataTransfer.getData('text/plain');
 
@@ -159,6 +163,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
         ),
       );
       return;
+    }
 
     default:
       return;
