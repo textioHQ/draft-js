@@ -511,7 +511,9 @@ class DraftEditor extends React.Component {
    * our EditorState.
    */
   _restoreEditorDOM(scrollPosition?: DraftScrollPosition): void {
+    console.warn('DraftEditor.restoreEditorDOM:begin');
     this.setState({contentsKey: this.state.contentsKey + 1}, () => {
+      console.warn('DraftEditor.restoreEditorDOM:complete: FOCUSING');
       this._focus(scrollPosition);
     });
   }
@@ -545,6 +547,9 @@ class DraftEditor extends React.Component {
    */
   _update(editorState: EditorState, renderNativeContent: boolean = false): void {
     this._renderNativeContent = renderNativeContent;
+
+    console.log('DraftEditor.update:selection', editorState.getSelection().toJS());
+
     this._latestEditorState = editorState;
     this.props.onChange(editorState);
   }

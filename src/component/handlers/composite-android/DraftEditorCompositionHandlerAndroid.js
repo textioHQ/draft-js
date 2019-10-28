@@ -24,17 +24,26 @@ const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
 
+let currentCompositionRange;
+let initialCompositionRange;
 let compositionRange = undefined;
 let compositionText = undefined;
 let hasInsertedCompositionText = false;
+let hasSeenSelectionChange = false;
+let lastCompositionText = '';
 let hasMutation = false;
 
 const resetCompositionData = () => {
+  console.log(`resetCompositionData`);
   createMutationObserverIfUndefined();
   compositionRange = undefined;
   compositionText = undefined;
   hasInsertedCompositionText = false;
   hasMutation = false;
+  currentCompositionRange = null;
+  initialCompositionRange = null;
+  hasSeenSelectionChange = false;
+  lastCompositionText = '';
 };
 
 const handleMutations = records => {
@@ -141,7 +150,18 @@ function findCompositionWordRange(
 }
 
 
+
 var DraftEditorCompositionHandlerAndroid = {
+  onSelect: (editor, e) => {
+    const draftSelection = deriveSelectionFromDOM(editor);
+    console.log(`DECH:onSelect`, draftSelection.toJS());
+    if (!hasSeenSelectionChange) {
+      hasSeenSelectionChange = true;
+    } else {
+      DraftEditorCompositionHandlerAndroid.onFakeCompositionEnd(editor);
+    }
+  },
+
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
     if (e.inputType === 'insertCompositionText') {
       hasInsertedCompositionText = true;
@@ -156,22 +176,38 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    console.warn('DECH.onCompositionStart');
     resetCompositionData();
     const editorNode = getEditorNode(editor);
 
     mutationObserver.observe(editorNode, { childList: true, subtree: true });
     compositionText = e.data;
     compositionRange = getCompositionRange(editor, compositionText);
+    initialCompositionRange = compositionRange;
+    currentCompositionRange = compositionRange;
   },
 
   onCompositionUpdate: function(
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    hasSeenSelectionChange = false;
+    lastCompositionText = e.data;
     if (!hasInsertedCompositionText) {
+      console.log(`DECH:onCompositionUpdate: setting compositionText to "${e.data}"`);
       compositionText = e.data;
       compositionRange = getCompositionRange(editor, compositionText);
+      initialCompositionRange = compositionRange;
+      currentCompositionRange = compositionRange;
+      return;
     }
+
+    // If the user moves the caret from one word to another, only compositionupdate
+    // will fire. We need to detect when that happens so that
+    console.warn(`DECH:onCompositionUpdate "${e.data}"`);
+
+    // const length = e.data.length;
+    // const start = compositionRange.getStartOffset();
   },
 
   onCompositionEnd: function(
@@ -181,9 +217,11 @@ var DraftEditorCompositionHandlerAndroid = {
     if (!hasMutation) {
       handleMutations(mutationObserver.takeRecords());
     }
+    console.warn('DECH.onCompositionEnd:hasMutation', hasMutation);
 
     const newText = e.data;
     if (newText === compositionText) {
+      console.log(`DECH.onCompositionEnd:newText===compositionText: "${newText}"`);
       const nextEditorState = EditorState.acceptSelection(
         editor._latestEditorState,
         compositionRange,
@@ -193,6 +231,7 @@ var DraftEditorCompositionHandlerAndroid = {
         EditorState.set(nextEditorState, { inCompositionMode: false }),
       );
     } else {
+      console.log(`DECH.onCompositionEnd:newText"${newText}" compositionText:"${compositionText}"`);
       // If any children have been added/removed the reconciler will crash unless we restore the dom.
       const mustReset = hasMutation;
       if (mustReset) {
@@ -218,6 +257,21 @@ var DraftEditorCompositionHandlerAndroid = {
         }),
       );
     }
+    resetCompositionData();
+  },
+
+
+  onFakeCompositionEnd: function(editor) {
+    console.warn(`DECH:onFakeCompositionEnd "${compositionText}"`, compositionRange.toJS());
+    const nextEditorState = replaceText(
+      editor._latestEditorState,
+      lastCompositionText,
+      compositionRange,
+
+      // // TODO
+      // editor._latestEditorState.getCurrentInlineStyle()
+    );
+    editor.update(nextEditorState);
     resetCompositionData();
   },
 

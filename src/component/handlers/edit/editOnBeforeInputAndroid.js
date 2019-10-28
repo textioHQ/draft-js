@@ -42,6 +42,7 @@ function replaceText(
  * character into the editor. Apply this character data to the document.
  */
 function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
+  // console.warn('EOBI:start');
   if (e.isComposing && !e.cancelable) {
     // Allow normal browser before for any composition events,
     return;
@@ -49,6 +50,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
 
   const staticRanges = e.getTargetRanges();
   const { inputType, data } = e;
+  console.warn(`EOBI:inputType:${inputType}`);
   const editorState = editor._latestEditorState;
 
   const editorNode = ReactDOM.findDOMNode(editor.refs.editorContainer);
@@ -84,11 +86,13 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     affectedSelection = currentDraftSelectionFromCurrentNativeSelection;
   }
 
+  console.log(`EOBI:affectedSelection:`, affectedSelection.selectionState.toJS());
   const editorStateWithCorrectSelection = EditorState.acceptSelection(
     editorState,
     affectedSelection.selectionState,
   );
   const chars = data;
+
 
   switch (inputType) {
     // Allowing insertCompositionText to pass through.
