@@ -48,6 +48,7 @@ const areLevel2InputEventsSupported = require('areLevel2InputEventsSupported');
 
 const isIE = UserAgent.isBrowser('IE');
 const isAndroid = UserAgent.isPlatform('Android');
+const isWebKit = UserAgent.isEngine('WebKit');
 // IE does not support the `input` event on contentEditable, so we can't
 // observe spellcheck behavior.
 const allowSpellCheck = !isIE;
@@ -285,6 +286,10 @@ class DraftEditor extends React.Component {
       outline: 'none',
       whiteSpace: 'pre-wrap',
       wordWrap: 'break-word',
+      // Ensures that the native iOS text editing tooltip doesn't show up inside the contenteditable
+      ...(isWebKit && {
+        WebkitUserModify: 'read-write-plaintext-only',
+      }),
     };
 
     const trapDivStyle = {
