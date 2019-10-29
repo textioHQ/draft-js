@@ -45,17 +45,12 @@ let textInputData = '';
 
 var DraftEditorCompositionHandler = {
   onBeforeInput: function(editor: DraftEditor, e: SyntheticInputEvent): void {
-    // When we're consuming native events (detected by the lact of a `nativeEvent` accessor), we discard
-    // `insertCompositionText` events, that information will be captured with the insertFromComposition event.
-    //
-    // For reference, the other key input types around composition are:
-    // deleteCompositionText and insertFromComposition,
-    if (!e.nativeEvent && e.inputType === 'insertCompositionText') {
-      return;
-
-    } else if (e.data) {
+    // If insertText event type fires here, that means we're at the end of a composition
+    if (e.inputType === 'insertText') {
       textInputData = (textInputData || '') + e.data;
+      return;
     }
+    textInputData = e.data || '';
   },
 
   /**

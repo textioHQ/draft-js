@@ -25,6 +25,8 @@ const DraftEditorCompositionHandler = require('DraftEditorCompositionHandler');
 const DraftEditorContents = require('DraftEditorContents.react');
 const DraftEditorDragHandler = require('DraftEditorDragHandler');
 const DraftEditorEditHandler = require('DraftEditorEditHandler');
+const DraftEditorEditAndroidHandler = require('DraftEditorEditAndroidHandler');
+const DraftEditorCompositionHandlerAndroid = require('DraftEditorCompositionHandlerAndroid');
 const DraftEditorPlaceholder = require('DraftEditorPlaceholder.react');
 const EditorState = require('EditorState');
 const React = require('React');
@@ -45,7 +47,8 @@ const nullthrows = require('nullthrows');
 const areLevel2InputEventsSupported = require('areLevel2InputEventsSupported');
 
 const isIE = UserAgent.isBrowser('IE');
-
+const isAndroid = UserAgent.isPlatform('Android');
+const isWebKit = UserAgent.isEngine('WebKit');
 // IE does not support the `input` event on contentEditable, so we can't
 // observe spellcheck behavior.
 const allowSpellCheck = !isIE;
@@ -53,8 +56,8 @@ const allowSpellCheck = !isIE;
 // Define a set of handler objects to correspond to each possible `mode`
 // of editor behavior.
 const handlerMap = {
-  'edit': DraftEditorEditHandler,
-  'composite': DraftEditorCompositionHandler,
+  'edit': isAndroid ? DraftEditorEditAndroidHandler : DraftEditorEditHandler,
+  'composite': isAndroid ? DraftEditorCompositionHandlerAndroid : DraftEditorCompositionHandler,
   'drag': DraftEditorDragHandler,
   'cut': null,
   'copy': null,
@@ -106,6 +109,7 @@ class DraftEditor extends React.Component {
   _onBlur: Function;
   _onCharacterData: Function;
   _onCompositionEnd: Function;
+  _onCompositionUpdate: Function;
   _onCompositionStart: Function;
   _onCopy: Function;
   _onCut: Function;
@@ -138,7 +142,7 @@ class DraftEditor extends React.Component {
   constructor(props: DraftEditorProps) {
     super(props);
 
-    this._useNativeBeforeInput = props.useNativeBeforeInputIfAble && areLevel2InputEventsSupported();
+    this._useNativeBeforeInput = isAndroid || (props.useNativeBeforeInputIfAble && areLevel2InputEventsSupported());
 
     this._blockSelectEvents = false;
     this._clipboard = null;
@@ -154,6 +158,7 @@ class DraftEditor extends React.Component {
     this._onCharacterData = this._buildHandler('onCharacterData');
     this._onCompositionEnd = this._buildHandler('onCompositionEnd');
     this._onCompositionStart = this._buildHandler('onCompositionStart');
+    this._onCompositionUpdate = this._buildHandler('onCompositionUpdate');
     this._onCopy = this._buildHandler('onCopy');
     this._onCut = this._buildHandler('onCut');
     this._onDragEnd = this._buildHandler('onDragEnd');
@@ -281,6 +286,10 @@ class DraftEditor extends React.Component {
       outline: 'none',
       whiteSpace: 'pre-wrap',
       wordWrap: 'break-word',
+      // Ensures that the native iOS text editing tooltip doesn't show up inside the contenteditable
+      ...(isWebKit && {
+        WebkitUserModify: 'read-write-plaintext-only',
+      }),
     };
 
     const trapDivStyle = {
@@ -328,6 +337,7 @@ class DraftEditor extends React.Component {
             onBlur={this._onBlur}
             onCompositionEnd={this._onCompositionEnd}
             onCompositionStart={this._onCompositionStart}
+            onCompositionUpdate={this._onCompositionUpdate}
             onCopy={this._onCopy}
             onCut={this._onCut}
             onDragEnd={this._onDragEnd}
