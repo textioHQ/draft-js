@@ -24,6 +24,7 @@ const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
 
+let isComposing = false;
 let currentCompositionRange;
 let initialCompositionRange;
 let compositionRange = undefined;
@@ -70,6 +71,13 @@ function replaceText(
     compositionRange: SelectionState,
     inlineStyle: DraftInlineStyle,
   ): EditorState {
+  try {
+    console.log(`replaceText: "${text}"`, compositionRange.toJS());
+  } catch (err) {
+    console.error('ERROR in replaceText:');
+    console.error(err);
+  }
+
   const contentState = DraftModifier.replaceText(
       editorState.getCurrentContent(),
       compositionRange,
@@ -163,6 +171,7 @@ var DraftEditorCompositionHandlerAndroid = {
   },
 
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
+    console.log(`DECH.onBeforeInput:"${e.inputType}"`);
     if (e.inputType === 'insertCompositionText') {
       hasInsertedCompositionText = true;
     }
@@ -178,6 +187,7 @@ var DraftEditorCompositionHandlerAndroid = {
   ): void {
     console.warn('DECH.onCompositionStart');
     resetCompositionData();
+    isComposing = true;
     const editorNode = getEditorNode(editor);
 
     mutationObserver.observe(editorNode, { childList: true, subtree: true });
@@ -214,6 +224,14 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    // if (!isComposing) {
+    //   return;
+    // }
+    // isComposing = false;
+    if (!compositionRange) {
+      console.warn(`DECH:onCompositionEnd: NO COMPOSITION RANGE`);
+      return;
+    }
     if (!hasMutation) {
       handleMutations(mutationObserver.takeRecords());
     }
@@ -262,7 +280,12 @@ var DraftEditorCompositionHandlerAndroid = {
 
 
   onFakeCompositionEnd: function(editor) {
-    console.warn(`DECH:onFakeCompositionEnd "${compositionText}"`, compositionRange.toJS());
+    if (!compositionRange) {
+      console.warn(`DECH:onFakeCompositionEnd: NO COMPOSITION RANGE`);
+      return;
+    }
+    // isComposing = false;
+    console.warn(`DECH:onFakeCompositionEnd "${compositionText}"`, !!compositionRange ? compositionRange.toJS() : null);
     const nextEditorState = replaceText(
       editor._latestEditorState,
       lastCompositionText,
