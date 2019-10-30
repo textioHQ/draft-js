@@ -15,6 +15,8 @@
 import type DraftEditor from 'DraftEditor.react';
 import type {DraftInlineStyle} from 'DraftInlineStyle';
 
+var getFragmentFromSelection = require('getFragmentFromSelection');
+
 var BlockTree = require('BlockTree');
 var DraftModifier = require('DraftModifier');
 var EditorState = require('EditorState');
@@ -113,8 +115,31 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
   // is not collapsed, we will re-render.
   var selection = editorState.getSelection();
   var anchorKey = selection.getAnchorKey();
+  var selectionEnd = selection.getEndOffset();
+  var selectionEndKey = selection.getEndKey();
 
   if (!selection.isCollapsed()) {
+    // Get the selected text
+    const selectedContentState = getFragmentFromSelection(editorState);
+    const selectedText = selectedContentState.toArray().map(block => block.getText()).join('');
+
+    // When the text is identical, just update the selection:
+    if (selectedText === chars) {
+      e.preventDefault();
+      editor.update(
+        EditorState.forceSelection(
+          editorState,
+          selection.merge({
+            anchorOffset: selectionEnd,
+            focusOffset: selectionEnd,
+            anchorKey: selectionEndKey,
+            focusKey: selectionEndKey,
+          }),
+        ),
+      );
+      return;
+    }
+
     e.preventDefault();
     editor.update(
       replaceText(
