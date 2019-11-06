@@ -23,6 +23,7 @@
     "deploy": "npm run build && npm pack && s3-deploy *.tgz --region us-east-1 --bucket textio-web-deps",
     "pretest": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json",
     "build": "gulp",
+    "build:watch": "gulp watch",
     "postbuild": "node node_modules/fbjs-scripts/node/check-lib-requires.js lib",
     "lint": "eslint .",
     "format": "eslint . --fix",
