@@ -238,12 +238,10 @@ var DraftEditorCompositionHandlerAndroid = {
       );
 
       editor.setMode('edit');
-      const editorStateProps = mustReset
-        ? {
-            nativelyRenderedContent: null,
-            forceSelection: true,
-          }
-        : {};
+      const editorStateProps = mustReset ? {
+        nativelyRenderedContent: null,
+        forceSelection: true,
+      } : {};
 
       DraftEditorCompositionHandlerAndroid.update(
         editor,
