@@ -24,6 +24,7 @@ const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
 
+let lastCompositionText = '';
 let compositionRange = undefined;
 let compositionText = undefined;
 let hasInsertedCompositionText = false;
@@ -35,6 +36,7 @@ const resetCompositionData = () => {
   compositionText = undefined;
   hasInsertedCompositionText = false;
   hasMutation = false;
+  lastCompositionText = '';
 };
 
 const handleMutations = records => {
@@ -70,13 +72,15 @@ function replaceText(
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
 
+const getEditorState = editor => editor._latestEditorState;
+
 const getEditorNode = (editor: DraftEditor) =>
   ReactDOM.findDOMNode(editor.refs.editorContainer);
 
 const deriveSelectionFromDOM = (editor: DraftEditor): SelectionState => {
   const editorNode = getEditorNode(editor);
   const draftSelection = getDraftEditorSelection(
-    editor._latestEditorState,
+    getEditorState(editor),
     editorNode,
   ).selectionState;
   return draftSelection;
@@ -95,7 +99,7 @@ const getCompositionRange = (editor: DraftEditor, text: string): SelectionState 
   } else {
     const draftSelection = deriveSelectionFromDOM(editor);
     const compositionRange = findCompositionWordRange(
-      editor._latestEditorState.getCurrentContent(),
+      getEditorState(editor).getCurrentContent(),
       draftSelection,
       text,
     );
@@ -140,8 +144,26 @@ function findCompositionWordRange(
   return selection;
 }
 
+const didCompositionRangeChange = ({ compositionRange, editor }) => {
+  if (!compositionRange) {
+    return false;
+  }
+
+  const selection = deriveSelectionFromDOM(editor);
+  return !compositionRange.hasEdgeWithin(
+    // We shouldn't need to worry about uncollapsed selections that span blocks since that'll end composition
+    selection.getStartKey(),
+    selection.getStartOffset(),
+    selection.getEndOffset(),
+  );
+};
 
 var DraftEditorCompositionHandlerAndroid = {
+  update: (editor, editorState) => {
+    editor.update(editorState);
+    resetCompositionData();
+  },
+
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
     if (e.inputType === 'insertCompositionText') {
       hasInsertedCompositionText = true;
@@ -168,10 +190,18 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    if (didCompositionRangeChange({ editor, compositionRange })) {
+      DraftEditorCompositionHandlerAndroid.endCurrentComposition(editor);
+      compositionText = e.data;
+      compositionRange = getCompositionRange(editor, compositionText);
+    }
+
     if (!hasInsertedCompositionText) {
       compositionText = e.data;
       compositionRange = getCompositionRange(editor, compositionText);
     }
+
+    lastCompositionText = e.data;
   },
 
   onCompositionEnd: function(
@@ -185,11 +215,12 @@ var DraftEditorCompositionHandlerAndroid = {
     const newText = e.data;
     if (newText === compositionText) {
       const nextEditorState = EditorState.acceptSelection(
-        editor._latestEditorState,
-        compositionRange,
+        getEditorState(editor),
+        deriveSelectionFromDOM(editor),
       );
       editor.setMode('edit');
-      editor.update(
+      DraftEditorCompositionHandlerAndroid.update(
+        editor,
         EditorState.set(nextEditorState, { inCompositionMode: false }),
       );
     } else {
@@ -200,10 +231,10 @@ var DraftEditorCompositionHandlerAndroid = {
       }
 
       const nextEditorState = replaceText(
-        editor._latestEditorState,
+        getEditorState(editor),
         newText,
         compositionRange,
-        editor._latestEditorState.getCurrentInlineStyle(),
+        getEditorState(editor).getCurrentInlineStyle(),
       );
 
       editor.setMode('edit');
@@ -211,16 +242,34 @@ var DraftEditorCompositionHandlerAndroid = {
         nativelyRenderedContent: null,
         forceSelection: true,
       } : {};
-      editor.update(
+
+      DraftEditorCompositionHandlerAndroid.update(
+        editor,
         EditorState.set(nextEditorState, {
           inCompositionMode: false,
           ...editorStateProps,
         }),
       );
     }
-    resetCompositionData();
   },
 
+  // When the user moves the caret from one word to another, we only see a
+  // compositionupdate (no compositionend for the old word, no compositionstart
+  // for the new word like one might expect given that moving the cursor commits
+  // the current composition text.
+  //
+  // We need to detect when the user moves the selection and add the previous
+  // word under composition to the contentState so that text doesn't disappear
+  // when draft rerenders when compositionend does fire.
+  endCurrentComposition: editor => {
+    const nextEditorState = replaceText(
+      getEditorState(editor),
+      lastCompositionText,
+      compositionRange,
+      getEditorState(editor).getCurrentInlineStyle(),
+    );
+    DraftEditorCompositionHandlerAndroid.update(editor, nextEditorState);
+  },
 };
 
 module.exports = DraftEditorCompositionHandlerAndroid;
