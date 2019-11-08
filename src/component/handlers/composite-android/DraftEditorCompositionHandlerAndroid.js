@@ -216,7 +216,7 @@ var DraftEditorCompositionHandlerAndroid = {
     if (newText === compositionText) {
       const nextEditorState = EditorState.acceptSelection(
         getEditorState(editor),
-        compositionRange,
+        deriveSelectionFromDOM(editor),
       );
       editor.setMode('edit');
       DraftEditorCompositionHandlerAndroid.update(
