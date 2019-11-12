@@ -287,7 +287,7 @@ class DraftEditor extends React.Component {
       whiteSpace: 'pre-wrap',
       wordWrap: 'break-word',
       // Ensures that the native iOS text editing tooltip doesn't show up inside the contenteditable
-      ...(isWebKit && {
+      ...(isWebKit && !readOnly && {
         WebkitUserModify: 'read-write-plaintext-only',
       }),
     };
