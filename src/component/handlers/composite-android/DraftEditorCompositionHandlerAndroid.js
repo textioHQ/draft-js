@@ -21,6 +21,7 @@ import type { DraftInlineStyle } from 'DraftInlineStyle';
 const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
 const ReactDOM = require('ReactDOM');
+const logEditorState = require('logEditorState');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
 
@@ -31,6 +32,7 @@ let hasInsertedCompositionText = false;
 let hasMutation = false;
 
 const resetCompositionData = () => {
+  console.log('DECH:resetCompositionData');
   createMutationObserverIfUndefined();
   compositionRange = undefined;
   compositionText = undefined;
@@ -150,21 +152,25 @@ const didCompositionRangeChange = ({ compositionRange, editor }) => {
   }
 
   const selection = deriveSelectionFromDOM(editor);
-  return !compositionRange.hasEdgeWithin(
+  const result = !compositionRange.hasEdgeWithin(
     // We shouldn't need to worry about uncollapsed selections that span blocks since that'll end composition
     selection.getStartKey(),
     selection.getStartOffset(),
     selection.getEndOffset(),
   );
+  console.log('didCompositionWordRangeChange:', result);
+  return result;
 };
 
 var DraftEditorCompositionHandlerAndroid = {
   update: (editor, editorState) => {
+    console.log(`DECH.update`);
     editor.update(editorState);
     resetCompositionData();
   },
 
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
+    console.log(`DECH.onBeforeInput(${e.inputType})`);
     if (e.inputType === 'insertCompositionText') {
       hasInsertedCompositionText = true;
     }
@@ -178,6 +184,7 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    console.log(`DECH.onCompositionStart`);
     resetCompositionData();
     const editorNode = getEditorNode(editor);
 
@@ -190,6 +197,7 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    console.log(`DECH.onCompositionUpdate`);
     if (didCompositionRangeChange({ editor, compositionRange })) {
       DraftEditorCompositionHandlerAndroid.endCurrentComposition(editor);
       compositionText = e.data;
@@ -208,12 +216,14 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    console.log(`DECH.onCompositionEnd`);
     if (!hasMutation) {
       handleMutations(mutationObserver.takeRecords());
     }
 
     const newText = e.data;
     if (newText === compositionText) {
+      console.log(`DECH.onCompositionEnd: text the same "${newText}"`);
       const nextEditorState = EditorState.acceptSelection(
         getEditorState(editor),
         deriveSelectionFromDOM(editor),
@@ -224,7 +234,8 @@ var DraftEditorCompositionHandlerAndroid = {
         EditorState.set(nextEditorState, { inCompositionMode: false }),
       );
     } else {
-      // If any children have been added/removed the reconciler will crash unless we restore the dom.
+      console.log(`DECH.onCompositionEnd: text changed "${newText}"`);
+      // If any children have been added/removed the reconciler will crash unless we restore the DOM.
       const mustReset = hasMutation;
       if (mustReset) {
         editor.restoreEditorDOM();
@@ -262,6 +273,7 @@ var DraftEditorCompositionHandlerAndroid = {
   // word under composition to the contentState so that text doesn't disappear
   // when draft rerenders when compositionend does fire.
   endCurrentComposition: editor => {
+    console.log(`DECH.endCurrentComposition`);
     const nextEditorState = replaceText(
       getEditorState(editor),
       lastCompositionText,
