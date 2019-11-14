@@ -25,35 +25,40 @@ const logEditorState = require('logEditorState');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
 
-let lastCompositionText = '';
-let compositionRange = undefined;
-let compositionText = undefined;
-let hasInsertedCompositionText = false;
-let hasMutation = false;
+const getEditorState = editor => editor._latestEditorState;
 
-const resetCompositionData = () => {
-  console.log('DECH:resetCompositionData');
-  createMutationObserverIfUndefined();
-  compositionRange = undefined;
-  compositionText = undefined;
-  hasInsertedCompositionText = false;
-  hasMutation = false;
-  lastCompositionText = '';
-};
+const getEditorNode = (editor: DraftEditor) =>
+  ReactDOM.findDOMNode(editor.refs.editorContainer);
 
-const handleMutations = records => {
-  hasMutation = !!records.length;
-  mutationObserver.disconnect();
-};
+// let lastCompositionText = '';
+// let compositionRange = undefined;
+// let compositionText = undefined;
+// let hasInsertedCompositionText = false;
+// let hasMutation = false;
 
-let mutationObserver = undefined;
+// const resetCompositionData = () => {
+//   console.log('DECH:resetCompositionData');
+//   createMutationObserverIfUndefined();
+//   compositionRange = undefined;
+//   compositionText = undefined;
+//   hasInsertedCompositionText = false;
+//   hasMutation = false;
+//   lastCompositionText = '';
+// };
 
-// Need to create mutation observer on runtime, not compile time
-const createMutationObserverIfUndefined = () => {
-  if (!mutationObserver) {
-    mutationObserver = new window.MutationObserver(handleMutations);
-  }
-};
+// const handleMutations = records => {
+//   hasMutation = !!records.length;
+//   mutationObserver.disconnect();
+// };
+
+// let mutationObserver = undefined;
+
+// // Need to create mutation observer on runtime, not compile time
+// const createMutationObserverIfUndefined = () => {
+//   if (!mutationObserver) {
+//     mutationObserver = new window.MutationObserver(handleMutations);
+//   }
+// };
 
 /**
  * Replace the current selection with the specified text string, with the
@@ -74,214 +79,389 @@ function replaceText(
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
 
-const getEditorState = editor => editor._latestEditorState;
 
-const getEditorNode = (editor: DraftEditor) =>
-  ReactDOM.findDOMNode(editor.refs.editorContainer);
 
-const deriveSelectionFromDOM = (editor: DraftEditor): SelectionState => {
-  const editorNode = getEditorNode(editor);
-  const draftSelection = getDraftEditorSelection(
-    getEditorState(editor),
-    editorNode,
-  ).selectionState;
-  return draftSelection;
-};
+// const deriveSelectionFromDOM = (editor: DraftEditor): SelectionState => {
+//   const editorNode = getEditorNode(editor);
+//   const draftSelection = getDraftEditorSelection(
+//     getEditorState(editor),
+//     editorNode,
+//   ).selectionState;
+//   return draftSelection;
+// };
 
-const getCompositionRange = (editor: DraftEditor, text: string): SelectionState => {
-  // Ocassionally a newline will get composed.  In this case, we want to strip it since
-  // we won't be able to match it in Draft, and it will get rewritten anyways.
-  if (text.endsWith('\n')) {
-    text = text.slice(0, text.length - 1);
+// const getCompositionRange = (editor: DraftEditor, text: string): SelectionState => {
+//   // Ocassionally a newline will get composed.  In this case, we want to strip it since
+//   // we won't be able to match it in Draft, and it will get rewritten anyways.
+//   if (text.endsWith('\n')) {
+//     text = text.slice(0, text.length - 1);
+//   }
+
+//   if (!text) {
+//     // The selection on editorState is likely out-of-sync, recompute it from the DOM
+//     return deriveSelectionFromDOM(editor);
+//   } else {
+//     const draftSelection = deriveSelectionFromDOM(editor);
+//     const compositionRange = findCompositionWordRange(
+//       getEditorState(editor).getCurrentContent(),
+//       draftSelection,
+//       text,
+//     );
+
+//     return compositionRange;
+//   }
+// };
+
+// function findCompositionWordRange(
+//   contentState: ContentState,
+//   selection: SelectionState,
+//   textToFind: string,
+// ) {
+//   if (!selection.isCollapsed()) {
+//     // Expected a collapsed selection, return early
+//     return selection;
+//   }
+
+//   const block = contentState.getBlockForKey(selection.getStartKey());
+//   const blockText = block.getText();
+//   const selStartOffset = selection.getStartOffset();
+//   const matchStartOffset = blockText.indexOf(
+//     textToFind,
+//     // The earliest textToFind could start is its length before the selection
+//     selStartOffset - textToFind.length,
+//   );
+
+//   if (
+//     // Ensure the match exists and contains the selection
+//     matchStartOffset >= 0 &&
+//     matchStartOffset <= selStartOffset &&
+//     matchStartOffset + textToFind.length >= selStartOffset
+//   ) {
+//     return selection.merge({
+//       anchorOffset: matchStartOffset,
+//       focusOffset: matchStartOffset + textToFind.length,
+//     });
+//   }
+
+//   // eslint-disable-next-line max-len
+//   console.warn(`findCompositionWordRange: couldn't find index of '${textToFind}' in '${blockText}' after offset ${selStartOffset}!`);
+//   return selection;
+// }
+
+// const didCompositionRangeChange = ({ compositionRange, editor }) => {
+//   if (!compositionRange) {
+//     return false;
+//   }
+
+//   try {
+//     console.log(`window.getSelection:`, window.getSelection().getRangeAt(0).cloneRange());
+//   } catch (err) {
+//     console.error(err);
+//   }
+//   const selection = deriveSelectionFromDOM(editor);
+//   console.log(`deriveSelectionFromDOM:`, selection.toJS());
+//   const result = !compositionRange.hasEdgeWithin(
+//     // We shouldn't need to worry about uncollapsed selections that span blocks since that'll end composition
+//     selection.getStartKey(),
+//     selection.getStartOffset(),
+//     selection.getEndOffset(),
+//   );
+//   console.log('didCompositionWordRangeChange:', result);
+//   return result;
+// };
+
+// var DraftEditorCompositionHandlerAndroid = {
+//   update: (editor, editorState) => {
+//     console.log(`DECH.update`);
+//     editor.update(editorState);
+//     resetCompositionData();
+//   },
+
+//   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
+//     console.log(`DECH.onBeforeInput(${e.inputType})`);
+//     if (e.inputType === 'insertCompositionText') {
+//       hasInsertedCompositionText = true;
+//     }
+//   },
+
+//   /**
+//    * A `compositionstart` event has fired while we're still in composition
+//    * mode. Continue the current composition session to prevent a re-render.
+//    */
+//   onCompositionStart: function(
+//     editor: DraftEditor,
+//     e: SyntheticCompositionEvent,
+//   ): void {
+//     console.log(`DECH.onCompositionStart`);
+//     resetCompositionData();
+//     const editorNode = getEditorNode(editor);
+
+//     mutationObserver.observe(editorNode, { childList: true, subtree: true });
+//     compositionText = e.data;
+//     compositionRange = getCompositionRange(editor, compositionText);
+//   },
+
+//   onCompositionUpdate: function(
+//     editor: DraftEditor,
+//     e: SyntheticCompositionEvent,
+//   ): void {
+//     console.log(`DECH.onCompositionUpdate`);
+//     if (didCompositionRangeChange({ editor, compositionRange })) {
+//       DraftEditorCompositionHandlerAndroid.endCurrentComposition(editor);
+//       compositionText = e.data;
+//       compositionRange = getCompositionRange(editor, compositionText);
+//     }
+
+//     if (!hasInsertedCompositionText) {
+//       compositionText = e.data;
+//       compositionRange = getCompositionRange(editor, compositionText);
+//     }
+
+//     lastCompositionText = e.data;
+//   },
+
+//   onCompositionEnd: function(
+//     editor: DraftEditor,
+//     e: SyntheticCompositionEvent,
+//   ): void {
+//     console.log(`DECH.onCompositionEnd`);
+
+//     didCompositionRangeChange({ compositionRange, editor });
+
+//     if (!hasMutation) {
+//       handleMutations(mutationObserver.takeRecords());
+//     }
+
+//     const newText = e.data;
+//     if (newText === compositionText) {
+//       console.log(`DECH.onCompositionEnd: text the same "${newText}"`);
+//       const nextEditorState = EditorState.acceptSelection(
+//         getEditorState(editor),
+//         deriveSelectionFromDOM(editor),
+//       );
+//       editor.setMode('edit');
+//       DraftEditorCompositionHandlerAndroid.update(
+//         editor,
+//         EditorState.set(nextEditorState, { inCompositionMode: false }),
+//       );
+//     } else {
+//       console.log(`DECH.onCompositionEnd: text changed newText:"${newText}" compositionText:"${compositionText}"`);
+//       // If any children have been added/removed the reconciler will crash unless we restore the DOM.
+//       const mustReset = hasMutation;
+//       if (mustReset) {
+//         editor.restoreEditorDOM();
+//       }
+
+//       const nextEditorState = replaceText(
+//         getEditorState(editor),
+//         newText,
+//         compositionRange,
+//         getEditorState(editor).getCurrentInlineStyle(),
+//       );
+
+//       editor.setMode('edit');
+//       const editorStateProps = mustReset ? {
+//         nativelyRenderedContent: null,
+//         forceSelection: true,
+//       } : {};
+
+//       DraftEditorCompositionHandlerAndroid.update(
+//         editor,
+//         EditorState.set(nextEditorState, {
+//           inCompositionMode: false,
+//           ...editorStateProps,
+//         }),
+//       );
+//     }
+//   },
+
+//   // When the user moves the caret from one word to another, we only see a
+//   // compositionupdate (no compositionend for the old word, no compositionstart
+//   // for the new word like one might expect given that moving the cursor commits
+//   // the current composition text.
+//   //
+//   // We need to detect when the user moves the selection and add the previous
+//   // word under composition to the contentState so that text doesn't disappear
+//   // when draft rerenders when compositionend does fire.
+//   endCurrentComposition: editor => {
+//     console.log(`DECH.endCurrentComposition`);
+//     const nextEditorState = replaceText(
+//       getEditorState(editor),
+//       lastCompositionText,
+//       compositionRange,
+//       getEditorState(editor).getCurrentInlineStyle(),
+//     );
+//     DraftEditorCompositionHandlerAndroid.update(editor, nextEditorState);
+//   },
+// };
+
+
+
+class DraftEditorCompositionHandlerAndroid {
+  constructor() {
+    // Methods
+    this.initializeObserver = this.initializeObserver.bind(this);
+    this.onCompositionUpdate = this.onCompositionUpdate.bind(this);
+    this.onCompositionStart = this.onCompositionStart.bind(this);
+    this.onCompositionEnd = this.onCompositionEnd.bind(this);
+    this.handleMutation = this.handleMutation.bind(this);
+    this.onBeforeInput = this.onBeforeInput.bind(this);
+    this.deriveSelection = this.deriveSelection.bind(this);
+    this.getDomSelection = this.getDomSelection.bind(this);
+    this.startObserving = this.startObserving.bind(this);
+    this.stopObserving = this.stopObserving.bind(this);
+    this.setState = this.setState.bind(this);
+    this.update = this.update.bind(this);
+    this.reset = this.reset.bind(this);
+
+    // debug utilities
+    this.name = 'DECH';
+    this.warn = this.warn = (label, ...args) =>
+      console.warn(`${this.name}:${label}`, ...args);
+    this.log = this.log = (label, ...args) =>
+      console.log(`${this.name}:${label}`, ...args);
+
+    // initialize
+    this.reset();
   }
 
-  if (!text) {
-    // The selection on editorState is likely out-of-sync, recompute it from the DOM
-    return deriveSelectionFromDOM(editor);
-  } else {
-    const draftSelection = deriveSelectionFromDOM(editor);
-    const compositionRange = findCompositionWordRange(
-      getEditorState(editor).getCurrentContent(),
-      draftSelection,
-      text,
+
+  /****************************************************************************
+   * STATE MANAGEMENT
+   ****************************************************************************/
+  setState(changes) {
+    this.state = Object.assign(this.state, changes);
+  }
+  update(editor, state) {
+    this.warn('update');
+    editor.update(state);
+    this.reset();
+  }
+  reset() {
+    this.warn('reset');
+    this.state = {
+      initialState: null,
+      hasMutation: false,
+      range: null,
+      lastText: '',
+      text: '',
+    };
+  }
+
+  /****************************************************************************
+   * MUTATION OBSERVER
+   ****************************************************************************/
+  initializeObserver() {
+    if (!this.observer) {
+      this.observer = new MutationObserver(this.handleMutation);
+    }
+  }
+  startObserving(editor) {
+    this.initializeObserver();
+    this.observer.observe(getEditorNode(editor), { childList: true, subtree: true });
+  }
+  stopObserving() {
+    this.observer.disconnect();
+  }
+  handleMutation(mutations) {
+    console.group('handleMutation');
+    this.log('mutations', mutations);
+    this.setState({ hasMutation: true });
+    console.groupEnd();
+  }
+  restoreDomIfNecessary(editor) {
+    console.group('restoreDomIfNecessary');
+    this.handleMutation(this.observer.takeRecords());
+    if (this.state.hasMutation) {
+      editor.restoreEditorDOM();
+    }
+    console.groupEnd();
+  }
+
+  /****************************************************************************
+   * SELECTION
+   ****************************************************************************/
+  getDomSelection() {
+    try {
+      return window
+        .getSelection()
+        .getRangeAt(0)
+        .cloneRange();
+    } catch (err) {
+      console.error(err);
+    }
+    return null;
+  }
+  deriveSelection(editor) {
+    return getDraftEditorSelection(
+      getEditorState(editor),
+      getEditorNode(editor),
+    ).selectionState;
+  }
+
+
+  /****************************************************************************
+   * HANDLERS
+   ****************************************************************************/
+  onBeforeInput(editor: DraftEditor, e: InputEvent) {
+    console.group('onBeforeInput', e.inputType, e);
+
+    const derivedSelection = this.deriveSelection(editor);
+    this.log('derivedSelection', derivedSelection.toJS());
+
+    console.groupEnd();
+  }
+
+
+  onCompositionStart(editor: DraftEditor, e: SyntheticCompositionEvent) {
+    console.group('onCompositionStart');
+    this.reset();
+    this.startObserving(editor);
+
+    const initialState = getEditorState(editor);
+    this.setState({ initialState });
+    this.log(
+      'initialEditorState.getSelection()',
+      initialState.getSelection().toJS(),
     );
 
-    return compositionRange;
-  }
-};
+    // The offsets here are relative to the new
+    const derivedSelection = this.deriveSelection(editor);
+    this.log('derivedSelection', derivedSelection.toJS());
 
-function findCompositionWordRange(
-  contentState: ContentState,
-  selection: SelectionState,
-  textToFind: string,
-) {
-  if (!selection.isCollapsed()) {
-    // Expected a collapsed selection, return early
-    return selection;
+    console.groupEnd();
   }
 
-  const block = contentState.getBlockForKey(selection.getStartKey());
-  const blockText = block.getText();
-  const selStartOffset = selection.getStartOffset();
-  const matchStartOffset = blockText.indexOf(
-    textToFind,
-    // The earliest textToFind could start is its length before the selection
-    selStartOffset - textToFind.length,
-  );
 
-  if (
-    // Ensure the match exists and contains the selection
-    matchStartOffset >= 0 &&
-    matchStartOffset <= selStartOffset &&
-    matchStartOffset + textToFind.length >= selStartOffset
-  ) {
-    return selection.merge({
-      anchorOffset: matchStartOffset,
-      focusOffset: matchStartOffset + textToFind.length,
-    });
+  onCompositionUpdate(editor: DraftEditor, e: SyntheticCompositionEvent) {
+    console.group('onCompositionUpdate');
+    const compositionText = e.data;
+    this.setState({ lastText: compositionText });
+
+    const derivedSelection = this.deriveSelection(editor);
+    this.log('derivedSelection', derivedSelection.toJS());
+    this.setState({ range: derivedSelection });
+
+
+    console.groupEnd();
   }
 
-  // eslint-disable-next-line max-len
-  console.warn(`findCompositionWordRange: couldn't find index of '${textToFind}' in '${blockText}' after offset ${selStartOffset}!`);
-  return selection;
+
+  onCompositionEnd(editor: DraftEditor, e: SyntheticCompositionEvent) {
+    console.group('onCompositionEnd');
+    this.restoreDomIfNecessary(editor);
+
+    const derivedSelection = this.deriveSelection(editor);
+    this.log('derivedSelection', derivedSelection.toJS());
+
+    const text = e.data;
+    this.log('text', `"${text}"`);
+
+    editor.setMode('edit');
+
+
+    console.groupEnd();
+  }
 }
 
-const didCompositionRangeChange = ({ compositionRange, editor }) => {
-  if (!compositionRange) {
-    return false;
-  }
-
-  const selection = deriveSelectionFromDOM(editor);
-  const result = !compositionRange.hasEdgeWithin(
-    // We shouldn't need to worry about uncollapsed selections that span blocks since that'll end composition
-    selection.getStartKey(),
-    selection.getStartOffset(),
-    selection.getEndOffset(),
-  );
-  console.log('didCompositionWordRangeChange:', result);
-  return result;
-};
-
-var DraftEditorCompositionHandlerAndroid = {
-  update: (editor, editorState) => {
-    console.log(`DECH.update`);
-    editor.update(editorState);
-    resetCompositionData();
-  },
-
-  onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
-    console.log(`DECH.onBeforeInput(${e.inputType})`);
-    if (e.inputType === 'insertCompositionText') {
-      hasInsertedCompositionText = true;
-    }
-  },
-
-  /**
-   * A `compositionstart` event has fired while we're still in composition
-   * mode. Continue the current composition session to prevent a re-render.
-   */
-  onCompositionStart: function(
-    editor: DraftEditor,
-    e: SyntheticCompositionEvent,
-  ): void {
-    console.log(`DECH.onCompositionStart`);
-    resetCompositionData();
-    const editorNode = getEditorNode(editor);
-
-    mutationObserver.observe(editorNode, { childList: true, subtree: true });
-    compositionText = e.data;
-    compositionRange = getCompositionRange(editor, compositionText);
-  },
-
-  onCompositionUpdate: function(
-    editor: DraftEditor,
-    e: SyntheticCompositionEvent,
-  ): void {
-    console.log(`DECH.onCompositionUpdate`);
-    if (didCompositionRangeChange({ editor, compositionRange })) {
-      DraftEditorCompositionHandlerAndroid.endCurrentComposition(editor);
-      compositionText = e.data;
-      compositionRange = getCompositionRange(editor, compositionText);
-    }
-
-    if (!hasInsertedCompositionText) {
-      compositionText = e.data;
-      compositionRange = getCompositionRange(editor, compositionText);
-    }
-
-    lastCompositionText = e.data;
-  },
-
-  onCompositionEnd: function(
-    editor: DraftEditor,
-    e: SyntheticCompositionEvent,
-  ): void {
-    console.log(`DECH.onCompositionEnd`);
-    if (!hasMutation) {
-      handleMutations(mutationObserver.takeRecords());
-    }
-
-    const newText = e.data;
-    if (newText === compositionText) {
-      console.log(`DECH.onCompositionEnd: text the same "${newText}"`);
-      const nextEditorState = EditorState.acceptSelection(
-        getEditorState(editor),
-        deriveSelectionFromDOM(editor),
-      );
-      editor.setMode('edit');
-      DraftEditorCompositionHandlerAndroid.update(
-        editor,
-        EditorState.set(nextEditorState, { inCompositionMode: false }),
-      );
-    } else {
-      console.log(`DECH.onCompositionEnd: text changed "${newText}"`);
-      // If any children have been added/removed the reconciler will crash unless we restore the DOM.
-      const mustReset = hasMutation;
-      if (mustReset) {
-        editor.restoreEditorDOM();
-      }
-
-      const nextEditorState = replaceText(
-        getEditorState(editor),
-        newText,
-        compositionRange,
-        getEditorState(editor).getCurrentInlineStyle(),
-      );
-
-      editor.setMode('edit');
-      const editorStateProps = mustReset ? {
-        nativelyRenderedContent: null,
-        forceSelection: true,
-      } : {};
-
-      DraftEditorCompositionHandlerAndroid.update(
-        editor,
-        EditorState.set(nextEditorState, {
-          inCompositionMode: false,
-          ...editorStateProps,
-        }),
-      );
-    }
-  },
-
-  // When the user moves the caret from one word to another, we only see a
-  // compositionupdate (no compositionend for the old word, no compositionstart
-  // for the new word like one might expect given that moving the cursor commits
-  // the current composition text.
-  //
-  // We need to detect when the user moves the selection and add the previous
-  // word under composition to the contentState so that text doesn't disappear
-  // when draft rerenders when compositionend does fire.
-  endCurrentComposition: editor => {
-    console.log(`DECH.endCurrentComposition`);
-    const nextEditorState = replaceText(
-      getEditorState(editor),
-      lastCompositionText,
-      compositionRange,
-      getEditorState(editor).getCurrentInlineStyle(),
-    );
-    DraftEditorCompositionHandlerAndroid.update(editor, nextEditorState);
-  },
-};
-
-module.exports = DraftEditorCompositionHandlerAndroid;
+module.exports = new DraftEditorCompositionHandlerAndroid();
