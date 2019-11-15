@@ -179,7 +179,7 @@ function replaceText(
 
 //   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
 //     console.log(`DECH.onBeforeInput(${e.inputType})`);
-//     if (e.inputType === 'insertCompositionText') {
+//     if (e.inputType === 'insertCompositionText') { // can be text insertion OR deletion
 //       hasInsertedCompositionText = true;
 //     }
 //   },
@@ -300,6 +300,7 @@ function replaceText(
 class DraftEditorCompositionHandlerAndroid {
   constructor() {
     // Methods
+    this.attachBeforeInputListener = this.attachBeforeInputListener.bind(this);
     this.initializeObserver = this.initializeObserver.bind(this);
     this.onCompositionUpdate = this.onCompositionUpdate.bind(this);
     this.onCompositionStart = this.onCompositionStart.bind(this);
@@ -310,7 +311,9 @@ class DraftEditorCompositionHandlerAndroid {
     this.getDomSelection = this.getDomSelection.bind(this);
     this.startObserving = this.startObserving.bind(this);
     this.stopObserving = this.stopObserving.bind(this);
+    this.onSelect = this.onSelect.bind(this);
     this.setState = this.setState.bind(this);
+    this.onInput = this.onInput.bind(this);
     this.update = this.update.bind(this);
     this.reset = this.reset.bind(this);
 
@@ -320,6 +323,8 @@ class DraftEditorCompositionHandlerAndroid {
       console.warn(`${this.name}:${label}`, ...args);
     this.log = this.log = (label, ...args) =>
       console.log(`${this.name}:${label}`, ...args);
+
+    this.hasAttachedListener = false;
 
     // initialize
     this.reset();
@@ -341,7 +346,9 @@ class DraftEditorCompositionHandlerAndroid {
     this.warn('reset');
     this.state = {
       initialState: null,
+      currentState: null,
       hasMutation: false,
+      initialRange: null,
       range: null,
       lastText: '',
       text: '',
@@ -370,7 +377,7 @@ class DraftEditorCompositionHandlerAndroid {
     console.groupEnd();
   }
   restoreDomIfNecessary(editor) {
-    console.group('restoreDomIfNecessary');
+    console.groupCollapsed('restoreDomIfNecessary');
     this.handleMutation(this.observer.takeRecords());
     if (this.state.hasMutation) {
       editor.restoreEditorDOM();
@@ -401,8 +408,12 @@ class DraftEditorCompositionHandlerAndroid {
 
 
   /****************************************************************************
-   * HANDLERS
+   * INPUT HANDLERS
    ****************************************************************************/
+
+  // Keep a temporary editorState off to the side as the current state
+  // On beforeinput, replace the derivedSelection (the comp range before the
+  // inserted character) with the e.data to generate the new current editorState
   onBeforeInput(editor: DraftEditor, e: InputEvent) {
     console.group('onBeforeInput', e.inputType, e);
 
@@ -412,7 +423,41 @@ class DraftEditorCompositionHandlerAndroid {
     console.groupEnd();
   }
 
+  attachBeforeInputListener(editor) {
+    if (!this.hasAttachedListener) {
 
+    }
+  }
+  handleBeforeInput(editor: DraftEditor, e: InputEvent) {
+    console.group('handleBeforeInput', e.inputType, e);
+
+    const derivedSelection = this.deriveSelection(editor);
+    this.log('derivedSelection', derivedSelection.toJS());
+
+    console.groupEnd();
+  }
+
+  onInput(editor: DraftEditor, e: SyntheticInputEvent) {
+    console.group('onInput', e.nativeEvent.inputType, e.nativeEvent);
+    // this.log('editorState.getSelection()', getEditorState(editor).getSelection().toJS());
+    this.log('DOM selection', this.getDomSelection());
+    const derivedSelection = this.deriveSelection(editor);
+    this.log('derivedSelection', derivedSelection.toJS());
+    console.groupEnd();
+  }
+
+  onSelect(editor: DraftEditor, e) {
+    console.group('onSelect');
+    // this.log('editorState.getSelection()', getEditorState(editor).getSelection().toJS());
+    const derivedSelection = this.deriveSelection(editor);
+    this.log('derivedSelection', derivedSelection.toJS());
+    console.groupEnd();
+  }
+
+
+  /****************************************************************************
+   * COMPOSITION HANDLERS
+   ****************************************************************************/
   onCompositionStart(editor: DraftEditor, e: SyntheticCompositionEvent) {
     console.group('onCompositionStart');
     this.reset();
@@ -421,11 +466,11 @@ class DraftEditorCompositionHandlerAndroid {
     const initialState = getEditorState(editor);
     this.setState({ initialState });
     this.log(
-      'initialEditorState.getSelection()',
+      'editorState.getSelection()',
       initialState.getSelection().toJS(),
     );
+    this.log('DOM selection', this.getDomSelection());
 
-    // The offsets here are relative to the new
     const derivedSelection = this.deriveSelection(editor);
     this.log('derivedSelection', derivedSelection.toJS());
 
@@ -434,10 +479,28 @@ class DraftEditorCompositionHandlerAndroid {
 
 
   onCompositionUpdate(editor: DraftEditor, e: SyntheticCompositionEvent) {
-    console.group('onCompositionUpdate');
+    console.group(`onCompositionUpdate: "${e.data}"`);
     const compositionText = e.data;
     this.setState({ lastText: compositionText });
 
+    // this.log('editorState.getSelection()', getEditorState(editor).getSelection().toJS());
+
+    this.log('DOM selection', this.getDomSelection());
+
+    // The offsets here are relative to the new state, not the old one
+    //
+    // This range will include the whole composition range except the inserted
+    // character (assuming it's inserted at the end of the word). For example,
+    // if you type "T" the range is a collapsed caret at the start. If you then
+    // type "h", the range includes the T only. If you type "e" next, the range
+    // is around the "Th" aka, it's the range before the new char is inserted --
+    // Immediately afterwards, a selectionchange will fire updating the selection
+    // to be after the inserted character.
+    //
+    // If they move the selection somewhere else, the DOM-derived selection will
+    // be collapsed again and the compositionupdate won't be preceded by a
+    // beforeinput, whether or not they moved the caret within the current
+    // composition range or outside it.
     const derivedSelection = this.deriveSelection(editor);
     this.log('derivedSelection', derivedSelection.toJS());
     this.setState({ range: derivedSelection });
@@ -448,9 +511,11 @@ class DraftEditorCompositionHandlerAndroid {
 
 
   onCompositionEnd(editor: DraftEditor, e: SyntheticCompositionEvent) {
-    console.group('onCompositionEnd');
+    console.group(`onCompositionEnd: "${e.data}"`);
     this.restoreDomIfNecessary(editor);
 
+    // this.log('editorState.getSelection()', getEditorState(editor).getSelection().toJS());
+    this.log('DOM selection', this.getDomSelection());
     const derivedSelection = this.deriveSelection(editor);
     this.log('derivedSelection', derivedSelection.toJS());
 
