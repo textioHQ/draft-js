@@ -54,7 +54,7 @@ const createMutationObserverIfUndefined = (editor) => {
   }
 };
 
-const getLoggableContent = (content) => content.getBlocksAsArray().map(b => `"${b.getText()}"`);
+const getLoggableContent = (content) => content.getBlocksAsArray().map(b => `"${b.getText()}"`).join(' ');
 
 /**
  * Replace the current selection with the specified text string, with the
@@ -74,8 +74,8 @@ function replaceText(
   );
   console.group('replaceText');
   console.log('composition range:', compositionRange.toJS());
-  console.log('state/selection before replacement:', getLoggableContent(editorState.getCurrentContent()), editorState.getSelection());
-  console.log('state/selection after replacement:', getLoggableContent(contentState), contentState.getSelectionAfter());
+  console.log('state/selection before replacement:', getLoggableContent(editorState.getCurrentContent()), editorState.getSelection().toJS());
+  console.log('state/selection after replacement:', getLoggableContent(contentState), contentState.getSelectionAfter().toJS());
   console.groupEnd();
 
   return EditorState.push(editorState, contentState, 'insert-characters');

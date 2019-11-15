@@ -274,6 +274,7 @@ class DraftEditor extends React.Component {
   }
 
   render(): React.Element<any> {
+    console.log(`DraftEditor.render: "${this.props.editorState.getCurrentContent().getBlocksAsArray().map(b => `"${b.getText()}"`).join(' ')}"`);
     const {readOnly, textAlignment} = this.props;
     const rootClass = cx({
       'DraftEditor/root': true,
