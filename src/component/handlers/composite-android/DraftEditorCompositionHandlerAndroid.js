@@ -200,7 +200,7 @@ var DraftEditorCompositionHandlerAndroid = {
     const selection = deriveSelectionFromDOM(editor);
     console.log('derived draft selection:', selection.toJS());
 
-    const nextEditorState = EditorState.forceSelection(compositionState, selection);
+    const nextEditorState = EditorState.acceptSelection(compositionState, selection);
     DraftEditorCompositionHandlerAndroid.update(
       editor,
       nextEditorState,
