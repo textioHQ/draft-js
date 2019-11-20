@@ -10,6 +10,7 @@ const EditorState = require('EditorState');
 const getDraftEditorSelection = require('getDraftEditorSelection');
 const invariant = require('invariant');
 
+const onCopy = require('editOnCopy');
 const keyCommandPlainBackspace = require('keyCommandPlainBackspace');
 const keyCommandPlainDelete = require('keyCommandPlainDelete');
 const keyCommandInsertNewline = require('keyCommandInsertNewline');
@@ -43,7 +44,7 @@ function replaceText(
  */
 function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
   if (e.isComposing && !e.cancelable) {
-    // Allow normal browser before for any composition events,
+    // Allow normal browser before for any composition events.
     return;
   }
 
@@ -119,8 +120,14 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     case 'deleteContentBackward':
     case 'deleteWordBackward':
     case 'deleteSoftLineBackward':
-    case 'deleteContent':
+    case 'deleteContent': {
+      e.preventDefault();
+      editor.update(keyCommandPlainBackspace(editorStateWithCorrectSelection));
+      return;
+    }
+
     case 'deleteByCut': {
+      onCopy(editor, e);
       e.preventDefault();
       editor.update(keyCommandPlainBackspace(editorStateWithCorrectSelection));
       return;
@@ -147,21 +154,7 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     }
 
     case 'insertFromPaste': {
-      // TODO: pastes will always be plaintext until we handle the dataTransfer object
-      const pasteChars = e.dataTransfer.getData('text/plain');
-
-      e.preventDefault();
-      editor.update(
-        replaceText(
-          editorStateWithCorrectSelection,
-          pasteChars,
-          editorStateWithCorrectSelection.getCurrentInlineStyle(),
-          getEntityKeyForSelection(
-            editorStateWithCorrectSelection.getCurrentContent(),
-            editorStateWithCorrectSelection.getSelection(),
-          ),
-        ),
-      );
+      // Allow insert `insertFromPaste` to pass through.
       return;
     }
 

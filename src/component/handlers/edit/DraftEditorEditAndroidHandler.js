@@ -12,14 +12,35 @@
 
 'use strict';
 
+const EditorState = require('EditorState');
+
 const onBeforeInput = require('editOnBeforeInputAndroid');
 const onCompositionStart = require('editOnCompositionStart');
 const onSelect = require('editOnSelect');
+const onCopy = require('editOnCopy');
+const onPaste = require('editOnPaste');
 
-// Noop everything except beforeInput and select...
+// For Android, we need to re-force the selection immediately outside the event to get the caret in 
+// the proper position and to re-trigger the keyboard.
+function onPasteWithSelection(editor, e) {
+  onPaste(editor, e);
+
+  // Force a reset of the selection on the next tick.
+  // `forceSelection` is needed or else the selection will be at the start of the pasted fragment.
+  // `setImmediate` is needed or else the keyboard will close.
+  setImmediate(() => {
+    editor.update(
+      EditorState.forceSelection(editor._latestEditorState, editor._latestEditorState.getSelection()),
+    );
+  });
+}
+
+// Only handle the following events:
 const DraftEditorEditAndroidHandler = {
   onBeforeInput,
   onCompositionStart,
+  onCopy,
+  onPaste: onPasteWithSelection,
   onSelect,
 };
 
