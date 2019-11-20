@@ -14,7 +14,6 @@
 'use strict';
 
 import type DraftEditor from 'DraftEditor.react';
-import type ContentState from 'ContentState';
 import type SelectionState from 'SelectionState';
 import type { DraftInlineStyle } from 'DraftInlineStyle';
 
