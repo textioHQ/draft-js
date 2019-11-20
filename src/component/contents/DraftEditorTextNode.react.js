@@ -79,7 +79,7 @@ class DraftEditorTextNode extends React.Component {
     } else {
       result = node.textContent !== nextProps.children;
     }
-    console.log(`DraftEditorTextNode("${this.props.children}").shouldComponentUpdate:`, result);
+    // console.log(`DraftEditorTextNode("${this.props.children}").shouldComponentUpdate:`, result);
     return result;
   }
 
