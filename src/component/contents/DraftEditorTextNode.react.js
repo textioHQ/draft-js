@@ -72,10 +72,15 @@ class DraftEditorTextNode extends React.Component {
     const node = ReactDOM.findDOMNode(this);
     const shouldBeNewline = nextProps.children === '';
     invariant(node instanceof Element, 'node is not an Element');
+
+    let result;
     if (shouldBeNewline) {
-      return !isNewline(node);
+      result = !isNewline(node);
+    } else {
+      result = node.textContent !== nextProps.children;
     }
-    return node.textContent !== nextProps.children;
+    console.log(`DraftEditorTextNode("${this.props.children}").shouldComponentUpdate:`, result);
+    return result;
   }
 
   componentWillUpdate(): void {

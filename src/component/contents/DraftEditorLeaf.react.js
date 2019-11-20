@@ -20,9 +20,11 @@ var ContentBlock = require('ContentBlock');
 const DraftEditorTextNode = require('DraftEditorTextNode.react');
 var React = require('React');
 var ReactDOM = require('ReactDOM');
+const CompositionContext = require('CompositionContext');
 
 const invariant = require('invariant');
 var setDraftEditorSelection = require('setDraftEditorSelection');
+
 
 type Props = {
   // The block that contains this leaf.
@@ -56,6 +58,23 @@ type Props = {
   text: string,
 };
 
+const doesSelectionMatterWhatsoever = (props: Props): Boolean => {
+  const { selection, block, start, text } = props;
+
+  // If selection state is irrelevant to the parent block, return false;
+  if (selection == null || !selection.getHasFocus()) {
+    return false;
+  }
+
+  const blockKey = block.getKey();
+  const end = start + text.length;
+  if (selection.hasEdgeWithin(blockKey, start, end)) {
+    return true;
+  }
+
+  return false;
+};
+
 /**
  * All leaf nodes in the editor are spans with single text nodes. Leaf
  * elements are styled based on the merging of an optional custom style map
@@ -66,6 +85,8 @@ type Props = {
  * maintain the selection state.
  */
 class DraftEditorLeaf extends React.Component {
+  static contextType = CompositionContext;
+
   /**
    * By making individual leaf instances aware of their context within
    * the text of the editor, we can set our selection range more
@@ -76,19 +97,33 @@ class DraftEditorLeaf extends React.Component {
    * text nodes, this would be harder.
    */
   _setSelection(): void {
-    const {selection} = this.props;
+    const {selection, block, start, text} = this.props;
 
-    // If selection state is irrelevant to the parent block, no-op.
-    if (selection == null || !selection.getHasFocus()) {
+    // // If selection state is irrelevant to the parent block, no-op.
+    // if (selection == null || !selection.getHasFocus()) {
+    //   return;
+    // }
+
+    // const {block, start, text} = this.props;
+    // const blockKey = block.getKey();
+    // const end = start + text.length;
+    // if (!selection.hasEdgeWithin(blockKey, start, end)) {
+    //   return;
+    // }
+
+    if (!doesSelectionMatterWhatsoever(this.props)) {
       return;
     }
 
-    const {block, start, text} = this.props;
+    const isComposing = this.context;
+    if (isComposing) {
+      return;
+    }
+
+    console.log(`DraftEditorLeaf(${this.props.offsetKey})._setSelection:`, selection.toJS());
+
     const blockKey = block.getKey();
     const end = start + text.length;
-    if (!selection.hasEdgeWithin(blockKey, start, end)) {
-      return;
-    }
 
     // Determine the appropriate target node for selection. If the child
     // is not a text node, it is a <br /> spacer. In this case, use the
@@ -121,12 +156,22 @@ class DraftEditorLeaf extends React.Component {
 
   shouldComponentUpdate(nextProps: Props): boolean {
     const leafNode = ReactDOM.findDOMNode(this.refs.leaf);
+    const isComposing = this.context;
     invariant(leafNode, 'Missing leafNode');
-    return (
+
+    if (isComposing && doesSelectionMatterWhatsoever(nextProps)) {
+      console.log(`DraftEditorLeaf(${nextProps.offsetKey} IN COMPOSITION).shouldComponentUpdate:`, false);
+      return false;
+    }
+
+    const result = (
       leafNode.textContent !== nextProps.text ||
       nextProps.styleSet !== this.props.styleSet ||
       nextProps.forceSelection
     );
+
+    // console.log(`DraftEditorLeaf(${nextProps.offsetKey}).shouldComponentUpdate:`, result);
+    return result;
   }
 
   componentDidUpdate(): void {

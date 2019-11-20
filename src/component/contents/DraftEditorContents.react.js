@@ -66,6 +66,11 @@ class DraftEditorContents extends React.Component {
     const wasComposing = prevEditorState.isInCompositionMode();
     const nowComposing = nextEditorState.isInCompositionMode();
 
+    // if (wasComposing && nowComposing) {
+    //   console.warn('DraftEditorContents.shouldComponentUpdate: WOULD RETURN', false);
+    //   // return false;
+    // }
+
     // If the state is unchanged or we're currently rendering a natively
     // rendered state, there's nothing new to be done.
     if (
@@ -73,9 +78,10 @@ class DraftEditorContents extends React.Component {
       (
         nextNativeContent !== null &&
         nextEditorState.getCurrentContent() === nextNativeContent
-      ) ||
-      (wasComposing && nowComposing)
+      )
+      // || (wasComposing && nowComposing)
     ) {
+      // console.warn('DraftEditorContents.shouldComponentUpdate:', false);
       return false;
     }
 
@@ -83,12 +89,14 @@ class DraftEditorContents extends React.Component {
     const nextContent = nextEditorState.getCurrentContent();
     const prevDecorator = prevEditorState.getDecorator();
     const nextDecorator = nextEditorState.getDecorator();
-    return (
+    const result = (
       wasComposing !== nowComposing ||
       prevContent !== nextContent ||
       prevDecorator !== nextDecorator ||
       nextEditorState.mustForceSelection()
     );
+    // console.warn('DraftEditorContents.shouldComponentUpdate:', result);
+    return result;
   }
 
   render(): React.Element<any> {
@@ -203,7 +211,7 @@ class DraftEditorContents extends React.Component {
       );
 
       // wrapperTemplate is the internal DraftJS wrapping template to wrap various blocks.
-      // customWrapperTemplate is a user provided component 
+      // customWrapperTemplate is a user provided component
       // and will also wrap blocks on top of wrapping by wrapperTemplate.
       processedBlocks.push({
         block: child,
@@ -226,7 +234,7 @@ class DraftEditorContents extends React.Component {
     // processedBlocks will contain all merged blocks
     // For example: header blocks,body blocks,and footer blocks will be merged into processedBlocks (in order)
     // We need to manually group by type (header,body,footer) and apply any custom wrapper.
-    // Then we need group those blocks (i.e. header blocks) by 
+    // Then we need group those blocks (i.e. header blocks) by
     // any specific wrapping needed internally by Draft (wrapping <li>'s in a <ul>)
     // We then put everything back together at the end (outputBlocks)
 
@@ -249,7 +257,7 @@ class DraftEditorContents extends React.Component {
           processedBlocks[ii].customWrapperTemplate == info.customWrapperTemplate
         );
 
-        // After grouping by customWrapperTemplate, 
+        // After grouping by customWrapperTemplate,
         // group those blocks by wrapperTemplate (internal wrapper)
         const blocksInInternalWrapper = [];
         for (let jj = 0; jj < blocksInCustomWrapper.length;) {
@@ -290,7 +298,7 @@ class DraftEditorContents extends React.Component {
         );
         outputBlocks.push(customWrapperElement);
       } else if (info.wrapperTemplate) {
-        // If there's only a wrapperTemplate (internal wrapper), only group by that 
+        // If there's only a wrapperTemplate (internal wrapper), only group by that
         const blocks = [];
         do {
           blocks.push(processedBlocks[ii].block);

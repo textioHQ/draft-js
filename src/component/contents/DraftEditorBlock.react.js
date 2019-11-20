@@ -61,7 +61,7 @@ type Props = {
  */
 class DraftEditorBlock extends React.Component {
   shouldComponentUpdate(nextProps: Props): boolean {
-    return (
+    const result = (
       this.props.block !== nextProps.block ||
       this.props.tree !== nextProps.tree ||
       this.props.direction !== nextProps.direction ||
@@ -73,6 +73,8 @@ class DraftEditorBlock extends React.Component {
         nextProps.forceSelection
       )
     );
+    // console.log(`DraftEditorBlock(${nextProps.block.getKey()}).shouldComponentUpdate:`, result);
+    return result;
   }
 
   /**

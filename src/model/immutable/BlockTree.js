@@ -85,6 +85,7 @@ var BlockTree = {
       decorator.getDecorations(block, contentState) :
       List(Repeat(null, textLength));
 
+
     var chars = block.getCharacterList();
 
     findRangesImmutable(
@@ -92,17 +93,40 @@ var BlockTree = {
       areEqual,
       returnTrue,
       (start, end) => {
-        leafSets.push(
-          new DecoratorRange({
-            start,
-            end,
-            decoratorKey: decorations.get(start),
-            leaves: generateLeaves(
-              chars.slice(start, end).toList(),
-              start,
-            ),
-          }),
-        );
+        let startOffset = start;
+        block
+          .getText()
+          .slice(start, end)
+          .split(/\b/)
+          .forEach(text => {
+            const endOffset = startOffset + text.length;
+            leafSets.push(
+              new DecoratorRange({
+                start: startOffset,
+                end: endOffset,
+                decoratorKey: decorations.get(startOffset),
+                leaves: generateLeaves(
+                  chars.slice(startOffset, endOffset).toList(),
+                  startOffset,
+                ),
+              }),
+            );
+
+            startOffset = endOffset;
+          });
+
+
+        // leafSets.push(
+        //   new DecoratorRange({
+        //     start,
+        //     end,
+        //     decoratorKey: decorations.get(start),
+        //     leaves: generateLeaves(
+        //       chars.slice(start, end).toList(),
+        //       start,
+        //     ),
+        //   }),
+        // );
       },
     );
 
@@ -149,6 +173,8 @@ function generateLeaves(
       );
     },
   );
+
+
   return List(leaves);
 }
 

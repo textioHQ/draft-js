@@ -28,6 +28,7 @@ const DraftEditorEditHandler = require('DraftEditorEditHandler');
 const DraftEditorEditAndroidHandler = require('DraftEditorEditAndroidHandler');
 const DraftEditorCompositionHandlerAndroid = require('DraftEditorCompositionHandlerAndroid');
 const DraftEditorPlaceholder = require('DraftEditorPlaceholder.react');
+const CompositionContextProvider = require('CompositionContextProvider');
 const EditorState = require('EditorState');
 const React = require('React');
 const ReactDOM = require('ReactDOM');
@@ -359,19 +360,21 @@ class DraftEditor extends React.Component {
             style={contentStyle}
             suppressContentEditableWarning
             tabIndex={this.props.tabIndex}>
-            <DraftEditorContents
-              blockRenderMap={this.props.blockRenderMap}
-              blockRendererFn={this.props.blockRendererFn}
-              blockStyleFn={this.props.blockStyleFn}
-              customStyleMap={
-                {...DefaultDraftInlineStyle, ...this.props.customStyleMap}
-              }
-              customStyleFn={this.props.customStyleFn}
-              editorKey={this._editorKey}
-              editorState={this.props.editorState}
-              key={'contents' + this.state.contentsKey}
-              textDirectionality={this.props.textDirectionality}
-            />
+            <CompositionContextProvider editorState={this.props.editorState}>
+              <DraftEditorContents
+                blockRenderMap={this.props.blockRenderMap}
+                blockRendererFn={this.props.blockRendererFn}
+                blockStyleFn={this.props.blockStyleFn}
+                customStyleMap={
+                  {...DefaultDraftInlineStyle, ...this.props.customStyleMap}
+                }
+                customStyleFn={this.props.customStyleFn}
+                editorKey={this._editorKey}
+                editorState={this.props.editorState}
+                key={'contents' + this.state.contentsKey}
+                textDirectionality={this.props.textDirectionality}
+              />
+            </CompositionContextProvider>
           </div>
         </div>
         <div
