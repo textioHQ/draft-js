@@ -154,7 +154,8 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     }
 
     case 'insertFromPaste': {
-      // Allow insert `insertFromPaste` to pass through.
+      // Allow insert `insertFromPaste` to pass through, it will be handled in the Android handler
+      // by `editOnPaste`.
       return;
     }
 
