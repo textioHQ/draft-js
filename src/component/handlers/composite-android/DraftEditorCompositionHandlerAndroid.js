@@ -88,10 +88,12 @@ var DraftEditorCompositionHandlerAndroid = {
 
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
     if (e.inputType === 'insertCompositionText') {
+      const derivedSelection = deriveSelectionFromDOM(editor);
+      console.log(`DECH.onBeforeInput "${e.data}" in ${derivedSelection.getStartKey()} ${derivedSelection.getStartOffset()}-${derivedSelection.getEndOffset()}`);
       const nextEditorState = replaceText(
         compositionState,
         e.data,
-        deriveSelectionFromDOM(editor),
+        derivedSelection,
         getEditorState(editor).getCurrentInlineStyle(),
       );
       compositionState = EditorState.set(nextEditorState, {

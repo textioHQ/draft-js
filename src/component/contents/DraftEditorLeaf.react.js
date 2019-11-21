@@ -98,7 +98,6 @@ class DraftEditorLeaf extends React.Component {
    */
   _setSelection(): void {
     const {selection, block, start, text} = this.props;
-
     // // If selection state is irrelevant to the parent block, no-op.
     // if (selection == null || !selection.getHasFocus()) {
     //   return;
@@ -156,13 +155,13 @@ class DraftEditorLeaf extends React.Component {
 
   shouldComponentUpdate(nextProps: Props): boolean {
     const leafNode = ReactDOM.findDOMNode(this.refs.leaf);
-    const isComposing = this.context;
+    // const isComposing = this.context;
     invariant(leafNode, 'Missing leafNode');
 
-    if (isComposing && doesSelectionMatterWhatsoever(nextProps)) {
-      console.log(`DraftEditorLeaf(${nextProps.offsetKey} IN COMPOSITION).shouldComponentUpdate:`, false);
-      return false;
-    }
+    // if (isComposing && doesSelectionMatterWhatsoever(nextProps)) {
+    //   console.log(`DraftEditorLeaf(${nextProps.offsetKey} IN COMPOSITION).shouldComponentUpdate:`, false);
+    //   return false;
+    // }
 
     const result = (
       leafNode.textContent !== nextProps.text ||
