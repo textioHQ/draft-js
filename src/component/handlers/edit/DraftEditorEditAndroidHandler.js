@@ -15,14 +15,20 @@
 const EditorState = require('EditorState');
 
 const onBeforeInput = require('editOnBeforeInputAndroid');
+const onKeyDown = require('editOnKeyDown');
 const onCompositionStart = require('editOnCompositionStart');
 const onSelect = require('editOnSelect');
 const onCopy = require('editOnCopy');
 const onPaste = require('editOnPaste');
 
-// For Android, we need to re-force the selection immediately outside the event to get the caret in 
-// the proper position and to re-trigger the keyboard.
-function onPasteWithSelection(editor, e) {
+/**
+ * For Android, we need to re-force the selection immediately outside the event to get the caret in
+ * the proper position and to re-trigger the keyboard.
+ *
+ * @param {DraftEditor} editor
+ * @param {KeyEvent} e
+ */
+function handlePaste(editor, e) {
   onPaste(editor, e);
 
   // Force a reset of the selection on the next tick.
@@ -35,12 +41,30 @@ function onPasteWithSelection(editor, e) {
   });
 }
 
+/**
+ * Note most Android keyboards will only emit the Unidentified key (229)
+ * However it WILL emit Enter (13), we pass this through to support plugins
+ * that trigger on Enter.
+ *
+ * All other interactions are handled with beforeInput.
+ *
+ * @param {DraftEditor} editor
+ * @param {KeyEvent} e
+ */
+function handleKeyDown(editor, e) {
+  const keyCode = e.which;
+  if (keyCode === 13 /* Enter */) {
+    onKeyDown(editor, e);
+  }
+}
+
 // Only handle the following events:
 const DraftEditorEditAndroidHandler = {
   onBeforeInput,
   onCompositionStart,
   onCopy,
-  onPaste: onPasteWithSelection,
+  onPaste: handlePaste,
+  onKeyDown: handleKeyDown,
   onSelect,
 };
 
