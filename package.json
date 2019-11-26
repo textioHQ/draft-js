@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.10.82-topic-composition-timeout",
+  "version": "0.10.82-topic-composition-timeout.0",
   "keywords": [
     "draftjs",
     "editor",
