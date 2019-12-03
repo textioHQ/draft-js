@@ -52,7 +52,9 @@ const startCompositionTimeout = (editor) => {
   cancelCompositionTimeout();
 
   if (!getEditorState(editor).isInCompositionMode()) {
-    //editor.update(EditorState.set(getEditorState(editor), { inCompositionMode: true }));
+    // Update silently to avoid triggering onChange.  We want future renders to go through,
+    // but the higher level editor should probably not concern itself with whether the EditorState
+    // is in composition mode.
     editor.silentlyUpdate(EditorState.set(getEditorState(editor), { inCompositionMode: true }));
   }
 
@@ -86,11 +88,12 @@ const isSafeToExitCompositionMode = (editor, compositionState: EditorState) => {
         .getCurrentContent()
         .getBlockForKey(selection.getEndKey());
 
+  // The end offset is exclusive, so this will get the character following the caret.
   const offset = selection.getEndOffset();
   const char = block.getText()[offset];
 
   // Check to see if the following character is a non word character, if
-  // it should be safe to allow the composition to change.
+  // it is, it should be safe to allow the composition to change.
   return (!char || char.match(/\W/));
 };
 
@@ -115,6 +118,10 @@ function replaceText(
 
 const getEditorState = editor => editor._latestEditorState;
 
+const setIsInCompositionMode = (editorState: EditorState, inCompositionMode) => (
+  EditorState.set(editorState, { inCompositionMode })
+);
+
 const getEditorNode = (editor: DraftEditor) =>
   ReactDOM.findDOMNode(editor.refs.editorContainer);
 
@@ -130,8 +137,9 @@ const deriveSelectionFromDOM = (editor: DraftEditor): SelectionState => {
 var DraftEditorCompositionHandlerAndroid = {
   commit: (editor, editorState) => {
     const selection = deriveSelectionFromDOM(editor);
-    const nextEditorState = EditorState.acceptSelection(editorState, selection);
-    editor.update(EditorState.set(nextEditorState, { inCompositionMode: false }));
+    editorState = EditorState.acceptSelection(editorState, selection);
+    editorState = setIsInCompositionMode(editorState, false);
+    editor.update(editorState);
 
     resetCompositionData(editor);
   },
