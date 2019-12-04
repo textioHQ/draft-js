@@ -22,16 +22,18 @@ const EditorState = require('EditorState');
 const ReactDOM = require('ReactDOM');
 
 const getDraftEditorSelection = require('getDraftEditorSelection');
-
+const compositionTimeoutDelay = 1500;
 
 let hasMutation = false;
 let mutationObserver = null;
 let compositionState = null;
+let compositionTimeoutId = null;
 
 const resetCompositionData = (editor) => {
   createMutationObserverIfUndefined();
   hasMutation = false;
   compositionState = getEditorState(editor);
+  cancelCompositionTimeout();
 };
 
 const handleMutations = records => {
@@ -44,6 +46,55 @@ const createMutationObserverIfUndefined = () => {
   if (!mutationObserver) {
     mutationObserver = new window.MutationObserver(handleMutations);
   }
+};
+
+const startCompositionTimeout = (editor) => {
+  cancelCompositionTimeout();
+
+  if (!getEditorState(editor).isInCompositionMode()) {
+    // Update silently to avoid triggering onChange.  We want future renders to go through,
+    // but the higher level editor should probably not concern itself with whether the EditorState
+    // is in composition mode.
+    editor.silentlyUpdate(EditorState.set(getEditorState(editor), { inCompositionMode: true }));
+  }
+
+  compositionTimeoutId = setTimeout(() => {
+    // If we are at a safe point to exit composition mode, do so to let renders through.
+    const editorState = getEditorState(editor);
+    if (editorState.isInCompositionMode() && isSafeToExitCompositionMode(editor, compositionState)) {
+      DraftEditorCompositionHandlerAndroid.commit(editor, compositionState);
+    }
+  }, compositionTimeoutDelay);
+};
+
+const cancelCompositionTimeout = () => {
+  if (compositionTimeoutId) {
+    clearTimeout(compositionTimeoutId);
+    compositionTimeoutId = null;
+  }
+};
+
+/**
+ * Checks to see if the uncommitted composition state can safely be updated.
+ * If a composition range is updated, the caret _should_ move to the end of the range.
+ * This means we can allow updates through when the caret wouldn't be moved.
+ *
+ * @param {DraftEditor} current editor
+ * @param {EditorState} compositionState
+ */
+const isSafeToExitCompositionMode = (editor, compositionState: EditorState) => {
+  const selection = deriveSelectionFromDOM(editor);
+  const block = compositionState
+        .getCurrentContent()
+        .getBlockForKey(selection.getEndKey());
+
+  // The end offset is exclusive, so this will get the character following the caret.
+  const offset = selection.getEndOffset();
+  const char = block.getText()[offset];
+
+  // Check to see if the following character is a non word character, if
+  // it is, it should be safe to allow the composition to change.
+  return (!char || char.match(/\W/));
 };
 
 /**
@@ -67,6 +118,10 @@ function replaceText(
 
 const getEditorState = editor => editor._latestEditorState;
 
+const setIsInCompositionMode = (editorState: EditorState, inCompositionMode) => (
+  EditorState.set(editorState, { inCompositionMode })
+);
+
 const getEditorNode = (editor: DraftEditor) =>
   ReactDOM.findDOMNode(editor.refs.editorContainer);
 
@@ -80,9 +135,12 @@ const deriveSelectionFromDOM = (editor: DraftEditor): SelectionState => {
 };
 
 var DraftEditorCompositionHandlerAndroid = {
-  update: (editor, editorState) => {
-    editor.setMode('edit');
-    editor.update(EditorState.set(editorState, { inCompositionMode: false }));
+  commit: (editor, editorState) => {
+    const selection = deriveSelectionFromDOM(editor);
+    editorState = EditorState.acceptSelection(editorState, selection);
+    editorState = setIsInCompositionMode(editorState, false);
+    editor.update(editorState);
+
     resetCompositionData(editor);
   },
 
@@ -105,29 +163,36 @@ var DraftEditorCompositionHandlerAndroid = {
     e: SyntheticCompositionEvent,
   ): void {
     resetCompositionData(editor);
+    startCompositionTimeout(editor);
     mutationObserver.observe(
       getEditorNode(editor),
       { childList: true, subtree: true },
     );
   },
 
+  onCompositionUpdate: function(
+    editor: DraftEditor,
+    e: SyntheticCompositionEvent,
+  ): void {
+    startCompositionTimeout(editor);
+  },
+
   onCompositionEnd: function(
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    // If no mutation has been detected yet, flush any pending events.
     if (!hasMutation) {
       handleMutations(mutationObserver.takeRecords());
     }
+
+    // If there are mutations now, restore the dom to prevent React from failing during reconciliation.
     if (hasMutation) {
       editor.restoreEditorDOM();
     }
 
-    const selection = deriveSelectionFromDOM(editor);
-    const nextEditorState = EditorState.acceptSelection(compositionState, selection);
-    DraftEditorCompositionHandlerAndroid.update(
-      editor,
-      nextEditorState,
-    );
+    editor.setMode('edit');
+    DraftEditorCompositionHandlerAndroid.commit(editor, compositionState);
   },
 };
 
