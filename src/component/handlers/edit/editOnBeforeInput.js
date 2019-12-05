@@ -170,7 +170,7 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
       editorState.getSelection(),
     ),
   );
-  console.log("Replacing Text with ", chars)
+  
   // Bunch of different cases follow where we need to prevent native insertion.
   let mustPreventNative = false;
   if (!mustPreventNative) {
