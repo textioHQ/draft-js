@@ -81,7 +81,6 @@ function replaceText(
  * occurs on the relevant text nodes.
  */
 function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEvent): void {
-
   // React doesn't fire a selection event until mouseUp, so it's possible to
   // click to change selection, hold the mouse down, and type a character
   // without React registering it. Let's sync the selection manually now.
@@ -90,6 +89,13 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
   const editorState = editor._latestEditorState;
 
   var chars = e.data;
+
+  // Treat replacement text as normal input.
+  // As an example, Safari uses this to replace a double space with a ". "
+  // See: https://www.w3.org/TR/input-events-2/#overview
+  if (!chars && e.inputType === 'insertReplacementText' && e.dataTransfer) {
+    chars = e.dataTransfer.getData('text/plain');
+  }
 
   // In some cases (ex: IE ideographic space insertion) no character data
   // is provided. There's nothing to do when this happens.
@@ -164,7 +170,7 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
       editorState.getSelection(),
     ),
   );
-
+  
   // Bunch of different cases follow where we need to prevent native insertion.
   let mustPreventNative = false;
   if (!mustPreventNative) {
