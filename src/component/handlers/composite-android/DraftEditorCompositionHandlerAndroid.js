@@ -36,6 +36,10 @@ const resetCompositionData = (editor) => {
   cancelCompositionTimeout();
 };
 
+const getCompositionTimeoutDelay = () => {
+  return window.COMPOSITION_DELAY || compositionTimeoutDelay;
+};
+
 const handleMutations = records => {
   hasMutation = !!records.length;
   mutationObserver.disconnect();
@@ -64,7 +68,7 @@ const startCompositionTimeout = (editor) => {
     if (editorState.isInCompositionMode() && isSafeToExitCompositionMode(editor, compositionState)) {
       DraftEditorCompositionHandlerAndroid.commit(editor, compositionState);
     }
-  }, compositionTimeoutDelay);
+  }, getCompositionTimeoutDelay());
 };
 
 const cancelCompositionTimeout = () => {
