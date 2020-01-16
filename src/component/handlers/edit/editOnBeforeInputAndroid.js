@@ -9,7 +9,7 @@ const DraftModifier = require('DraftModifier');
 const EditorState = require('EditorState');
 const getDraftEditorSelection = require('getDraftEditorSelection');
 const invariant = require('invariant');
-
+const isEventHandled = require('isEventHandled');
 const onCopy = require('editOnCopy');
 const keyCommandPlainBackspace = require('keyCommandPlainBackspace');
 const keyCommandPlainDelete = require('keyCommandPlainDelete');
@@ -90,6 +90,19 @@ function editOnBeforeInputAndroid(editor: DraftEditor, e: InputEvent): void {
     affectedSelection.selectionState,
   );
   const chars = data;
+
+  // Allow the top-level component to handle the insertion manually. This is
+  // useful when triggering interesting behaviors for a character insertion,
+  // Simple examples: replacing a raw text ':)' with a smile emoji or image
+  // decorator, or setting a block to be a list item after typing '- ' at the
+  // start of the block.
+  if (
+    editor.props.handleBeforeInput &&
+    isEventHandled(editor.props.handleBeforeInput(chars, editorStateWithCorrectSelection))
+  ) {
+    e.preventDefault();
+    return;
+  }
 
   switch (inputType) {
     // Allowing insertCompositionText to pass through.
