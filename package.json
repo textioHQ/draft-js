@@ -1,7 +1,7 @@
 {
   "name": "draft-js",
   "description": "A React framework for building text editors.",
-  "version": "0.10.85-topic-en-9244-exit-composition-anywhere-rev",
+  "version": "0.10.85-topic-en-9244-exit-composition-anywhere-rev.0",
   "keywords": [
     "draftjs",
     "editor",
