@@ -61,7 +61,7 @@ const startCompositionTimeout = (editor) => {
   compositionTimeoutId = setTimeout(() => {
     // If we are at a safe point to exit composition mode, do so to let renders through.
     const editorState = getEditorState(editor);
-    if (editorState.isInCompositionMode() && isSafeToExitCompositionMode(editor, compositionState)) {
+    if (editorState.isInCompositionMode()) {
       DraftEditorCompositionHandlerAndroid.commit(editor, compositionState);
     }
   }, compositionTimeoutDelay);
@@ -72,29 +72,6 @@ const cancelCompositionTimeout = () => {
     clearTimeout(compositionTimeoutId);
     compositionTimeoutId = null;
   }
-};
-
-/**
- * Checks to see if the uncommitted composition state can safely be updated.
- * If a composition range is updated, the caret _should_ move to the end of the range.
- * This means we can allow updates through when the caret wouldn't be moved.
- *
- * @param {DraftEditor} current editor
- * @param {EditorState} compositionState
- */
-const isSafeToExitCompositionMode = (editor, compositionState: EditorState) => {
-  const selection = deriveSelectionFromDOM(editor);
-  const block = compositionState
-        .getCurrentContent()
-        .getBlockForKey(selection.getEndKey());
-
-  // The end offset is exclusive, so this will get the character following the caret.
-  const offset = selection.getEndOffset();
-  const char = block.getText()[offset];
-
-  // Check to see if the following character is a non word character, if
-  // it is, it should be safe to allow the composition to change.
-  return (!char || char.match(/\W/));
 };
 
 /**
