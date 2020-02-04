@@ -15,6 +15,7 @@
 const EditorState = require('EditorState');
 
 const onBeforeInput = require('editOnBeforeInputAndroid');
+const onBlur = require('editOnBlur');
 const onKeyDown = require('editOnKeyDown');
 const onCompositionStart = require('editOnCompositionStart');
 const onSelect = require('editOnSelect');
@@ -61,6 +62,7 @@ function handleKeyDown(editor, e) {
 // Only handle the following events:
 const DraftEditorEditAndroidHandler = {
   onBeforeInput,
+  onBlur,
   onCompositionStart,
   onCopy,
   onPaste: handlePaste,
