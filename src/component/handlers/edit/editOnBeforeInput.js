@@ -86,7 +86,6 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
   // click to change selection, hold the mouse down, and type a character
   // without React registering it. Let's sync the selection manually now.
   editOnSelect(editor);
-  console.log(e);
   const editorState = editor._latestEditorState;
 
   var chars = e.data;
