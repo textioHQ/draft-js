@@ -29,6 +29,7 @@ var nullthrows = require('nullthrows');
 var setImmediate = require('setImmediate');
 var editOnInput = require('editOnInput');
 var editOnSelect = require('editOnSelect');
+var keyCommandUndo = require('keyCommandUndo');
 
 // When nothing is focused, Firefox regards two characters, `'` and `/`, as
 // commands that should open and focus the "quickfind" search bar. This should
@@ -89,6 +90,20 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
   const editorState = editor._latestEditorState;
 
   var chars = e.data;
+
+  // Intercept native undo events
+  if (e.inputType === 'historyUndo') {
+    keyCommandUndo(e, editorState, editor.update);
+    return;
+  } else if (e.inputType === 'historyRedo') {
+    e.preventDefault();
+    // See handling in editOnKeyDown
+    const newState = EditorState.redo(editorState);
+    if (newState !== editorState) {
+      editor.update(newState);
+    }
+    return;
+  }
 
   // Treat replacement text as normal input.
   // As an example, Safari uses this to replace a double space with a ". "
