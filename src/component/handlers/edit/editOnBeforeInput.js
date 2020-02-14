@@ -86,7 +86,7 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
   // click to change selection, hold the mouse down, and type a character
   // without React registering it. Let's sync the selection manually now.
   editOnSelect(editor);
-
+  console.log(e);
   const editorState = editor._latestEditorState;
 
   var chars = e.data;
@@ -110,6 +110,17 @@ function editOnBeforeInput(editor: DraftEditor, e: InputEvent | SyntheticInputEv
   // See: https://www.w3.org/TR/input-events-2/#overview
   if (!chars && e.inputType === 'insertReplacementText' && e.dataTransfer) {
     chars = e.dataTransfer.getData('text/plain');
+  }
+
+  // Account for input modes that try to insert spaces before words (ie: swipe typing on iOS).
+  // This is usually appropriate, however Draft's character handling confuses iOS' heuristics
+  // about what has been typed.  This is most apparent at the beginning a paragraph.
+  if (chars.length > 1 && chars[0] === ' ' && e.inputType === 'insertText') {
+    const selection = editorState.getSelection();
+    if (selection.isCollapsed() && selection.getEndOffset() === 0) {
+      // Convert ' word' to 'word'.
+      chars = chars.slice(1);
+    }
   }
 
   // In some cases (ex: IE ideographic space insertion) no character data
