@@ -63,12 +63,12 @@ const startCompositionTimeout = (editor) => {
     const editorState = getEditorState(editor);
     if (editorState.isInCompositionMode()) {
       if (hasMutation) {
-        setImmediate(() => {
+        setTimeout(() => {
           // Restore the DOM after we switch Draft out of composition mode so the cursor
           // returns to the expected place.  This may cause the keyboard suggestions to blink,
           // but it's required to prevent errors during reconciliation.
           editor.restoreEditorDOM();
-        });
+        }, 0);
       }
       DraftEditorCompositionHandlerAndroid.commit(editor, compositionState);
     }
@@ -164,6 +164,10 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    // Prevent the composition timeout from kicking in after the user
+    // exits composition mode.
+    cancelCompositionTimeout();
+
     // If no mutation has been detected yet, flush any pending events.
     if (!hasMutation) {
       handleMutations(mutationObserver.takeRecords());
@@ -181,7 +185,6 @@ var DraftEditorCompositionHandlerAndroid = {
 
     editor.setMode('edit');
     DraftEditorCompositionHandlerAndroid.commit(editor, compositionState);
-    cancelCompositionTimeout();
   },
 };
 
