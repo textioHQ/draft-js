@@ -62,6 +62,14 @@ const startCompositionTimeout = (editor) => {
     // If we are at a safe point to exit composition mode, do so to let renders through.
     const editorState = getEditorState(editor);
     if (editorState.isInCompositionMode()) {
+      if (hasMutation) {
+        setTimeout(() => {
+          // Restore the DOM after we switch Draft out of composition mode so the cursor
+          // returns to the expected place.  This may cause the keyboard suggestions to blink,
+          // but it's required to prevent errors during reconciliation.
+          editor.restoreEditorDOM();
+        }, 0);
+      }
       DraftEditorCompositionHandlerAndroid.commit(editor, compositionState);
     }
   }, compositionTimeoutDelay);
@@ -90,6 +98,7 @@ function replaceText(
       text,
       inlineStyle,
   );
+
   return EditorState.push(editorState, contentState, 'insert-characters');
 }
 
@@ -123,15 +132,12 @@ var DraftEditorCompositionHandlerAndroid = {
 
   onBeforeInput: function(editor: DraftEditor, e: InputEvent): void {
     if (e.inputType === 'insertCompositionText') {
-      const nextEditorState = replaceText(
+      compositionState = replaceText(
         compositionState,
         e.data,
         deriveSelectionFromDOM(editor),
         getEditorState(editor).getCurrentInlineStyle(),
       );
-      compositionState = EditorState.set(nextEditorState, {
-        nativelyRenderedContent: nextEditorState.getCurrentContent(),
-      });
     }
   },
 
@@ -158,14 +164,23 @@ var DraftEditorCompositionHandlerAndroid = {
     editor: DraftEditor,
     e: SyntheticCompositionEvent,
   ): void {
+    // Prevent the composition timeout from kicking in after the user
+    // exits composition mode.
+    cancelCompositionTimeout();
+
     // If no mutation has been detected yet, flush any pending events.
     if (!hasMutation) {
       handleMutations(mutationObserver.takeRecords());
     }
 
-    // If there are mutations now, restore the dom to prevent React from failing during reconciliation.
     if (hasMutation) {
+      // If there are mutations now, restore the dom to prevent React from failing during reconciliation.
       editor.restoreEditorDOM();
+    } else {
+      // If there are no mutations Draft is unaware of (deletions), flag it as native content.
+      compositionState = EditorState.set(compositionState, {
+        nativelyRenderedContent: compositionState.getCurrentContent(),
+      });
     }
 
     editor.setMode('edit');
