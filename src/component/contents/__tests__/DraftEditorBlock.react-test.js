@@ -15,8 +15,7 @@
 jest.disableAutomock()
   .mock('Style')
   .mock('getElementPosition')
-  .mock('getScrollPosition')
-  .mock('getViewportDimensions');
+  .mock('scrollElementIntoView');
 
 var BlockTree = require('BlockTree');
 var CharacterMetadata = require('CharacterMetadata');
@@ -29,11 +28,9 @@ var ReactTestRenderer = require('react-test-renderer');
 var SampleDraftInlineStyle = require('SampleDraftInlineStyle');
 var SelectionState = require('SelectionState');
 var Style = require('Style');
+var scrollElementIntoView = require('scrollElementIntoView');
 var UnicodeBidiDirection = require('UnicodeBidiDirection');
 
-var getElementPosition = require('getElementPosition');
-var getScrollPosition = require('getScrollPosition');
-var getViewportDimensions = require('getViewportDimensions');
 var {BOLD, NONE, ITALIC} = SampleDraftInlineStyle;
 
 var mockGetDecorations = jest.fn();
@@ -129,20 +126,11 @@ function assertLeaves(renderedBlock, leafProps) {
 
 describe('DraftEditorBlock.react', () => {
   Style.getScrollParent.mockReturnValue(window);
-  window.scrollTo = jest.fn();
-  getElementPosition.mockReturnValue({
-    x: 0,
-    y: 600,
-    width: 500,
-    height: 16,
-  });
-  getScrollPosition.mockReturnValue({x: 0, y: 0});
-  getViewportDimensions.mockReturnValue({width: 1200, height: 800});
 
   beforeEach(() => {
-    window.scrollTo.mockClear();
     mockGetDecorations.mockClear();
     mockLeafRender.mockClear();
+    scrollElementIntoView.mockClear();
   });
 
   describe('Basic rendering', () => {
@@ -508,36 +496,26 @@ describe('DraftEditorBlock.react', () => {
 
     describe('Scroll parent is `window`', () => {
       it('must scroll the window if needed', () => {
-        getElementPosition.mockReturnValueOnce({
-          x: 0,
-          y: 800,
-          width: 500,
-          height: 16,
-        });
-
         var container = document.createElement('div');
+
         ReactDOM.render(
           <DraftEditorBlock {...props} />,
           container,
         );
 
-        var scrollCalls = window.scrollTo.mock.calls;
-        expect(scrollCalls.length).toBe(1);
-        expect(scrollCalls[0][0]).toBe(0);
-
-        // (current scroll position) + (block height) + (buffer)
-        expect(scrollCalls[0][1]).toBe(26);
+        expect(scrollElementIntoView).toHaveBeenCalled();
       });
 
-      it('must not scroll the window if unnecessary', () => {
+      it('must not scroll the window if the selection is not in the block', () => {
         var container = document.createElement('div');
+        var selection = SelectionState.createEmpty('NONE-KEY');
+
         ReactDOM.render(
-          <DraftEditorBlock {...props} />,
+          <DraftEditorBlock {...props} selection={selection} />,
           container,
         );
 
-        var scrollCalls = window.scrollTo.mock.calls;
-        expect(scrollCalls.length).toBe(0);
+        expect(scrollElementIntoView).not.toHaveBeenCalled();
       });
     });
   });
