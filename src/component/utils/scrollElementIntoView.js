@@ -20,7 +20,7 @@ function scrollElementIntoView(element) {
 
   if (scrollParent === window) {
     // Window has a different API for scrolling than elements especially on
-    // IE11.  Luckily we can get the documentElement (<HTML>) and operate on that.
+    // IE11.  Luckily we can get the scrolling element and operate on that.
     scrollElement = window.document.scrollingElement || window.document.documentElement;
     scrollRect = { top: 0, bottom: window.innerHeight };
   } else {
