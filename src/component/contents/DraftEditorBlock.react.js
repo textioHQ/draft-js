@@ -23,14 +23,12 @@ import type { List } from 'immutable';
 const DraftEditorLeaf = require('DraftEditorLeaf.react');
 const DraftOffsetKey = require('DraftOffsetKey');
 const React = require('React');
-const Style = require('Style');
 const UnicodeBidi = require('UnicodeBidi');
 const UnicodeBidiDirection = require('UnicodeBidiDirection');
+const scrollElementIntoView = require('scrollElementIntoView');
 
 const cx = require('cx');
 const nullthrows = require('nullthrows');
-
-const SCROLL_BUFFER = 10;
 
 type Props = {
   contentState: ContentState,
@@ -77,9 +75,7 @@ class DraftEditorBlock extends React.Component {
    * will miss out on the browser natively scrolling to that position.
    *
    * To replicate native behavior, if the block overlaps the selection state
-   * on mount, force the scroll position. Check the visible bounds of the scroll
-   * parent against the bounds of the new block and scroll up or down to bring
-   * it into view.
+   * on mount, force the scroll position.
    */
   componentDidMount(): void {
     const selection = this.props.selection;
@@ -90,32 +86,8 @@ class DraftEditorBlock extends React.Component {
     }
 
     const blockElement = this._element;
-    if (blockElement == null) {
-      return;
-    }
 
-    const blockRect = blockElement.getBoundingClientRect();
-    const scrollParent = Style.getScrollParent(blockElement);
-    let scrollElement;
-    let scrollRect;
-
-    if (scrollParent === window) {
-      // Window itself has a different API for scrolling than elements especially on
-      // IE11.  Luckily we can get the documentElement (<HTML>) and operate on that.
-      scrollElement = window.document.documentElement;
-      scrollRect = { top: 0, bottom: window.innerHeight };
-    } else {
-      scrollElement = scrollParent;
-      scrollRect = scrollElement.getBoundingClientRect();
-    }
-
-    if (blockRect.top < scrollRect.top) {
-      // If the top of the block is above the scroll element, scroll up.
-      scrollElement.scrollTop -= (scrollRect.top - blockRect.top + SCROLL_BUFFER);
-    } else if (blockRect.bottom > scrollRect.bottom) {
-      // If the bottom of the block is below the scroll element, scroll down.
-      scrollElement.scrollTop += (blockRect.bottom - scrollRect.bottom + SCROLL_BUFFER);
-    }
+    scrollElementIntoView(blockElement);
   }
 
 
