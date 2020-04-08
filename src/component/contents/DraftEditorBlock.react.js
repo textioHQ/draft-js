@@ -15,10 +15,10 @@
 
 import type ContentBlock from 'ContentBlock';
 import type ContentState from 'ContentState';
-import type {DraftDecoratorType} from 'DraftDecoratorType';
+import type { DraftDecoratorType } from 'DraftDecoratorType';
 import type SelectionState from 'SelectionState';
-import type {BidiDirection} from 'UnicodeBidiDirection';
-import type {List} from 'immutable';
+import type { BidiDirection } from 'UnicodeBidiDirection';
+import type { List } from 'immutable';
 
 const DraftEditorLeaf = require('DraftEditorLeaf.react');
 const DraftOffsetKey = require('DraftOffsetKey');
@@ -83,49 +83,48 @@ class DraftEditorBlock extends React.Component {
    * will miss out on the browser natively scrolling to that position.
    *
    * To replicate native behavior, if the block overlaps the selection state
-   * on mount, force the scroll position. Check the scroll state of the scroll
-   * parent, and adjust it to align the entire block to the bottom of the
-   * scroll parent.
+   * on mount, force the scroll position. Check the visible bounds of the scroll
+   * parent against the bounds of the new block and scroll up or down to bring
+   * it into view.
    */
   componentDidMount(): void {
-    var selection = this.props.selection;
-    var endKey = selection.getEndKey();
+    const selection = this.props.selection;
+    const endKey = selection.getEndKey();
+
     if (!selection.getHasFocus() || endKey !== this.props.block.getKey()) {
       return;
     }
 
-    var blockNode = ReactDOM.findDOMNode(this);
-    var scrollParent = Style.getScrollParent(blockNode);
-    var scrollPosition = getScrollPosition(scrollParent);
-    var scrollDelta;
+    const blockElement = this._element;
+    if (blockElement == null) {
+      return;
+    }
+
+    const blockRect = blockElement.getBoundingClientRect();
+    const scrollParent = Style.getScrollParent(blockElement);
+    let scrollElement;
+    let scrollRect;
 
     if (scrollParent === window) {
-      var nodePosition = getElementPosition(blockNode);
-      var nodeBottom = nodePosition.y + nodePosition.height;
-      var viewportHeight = getViewportDimensions().height;
-      scrollDelta = nodeBottom - viewportHeight;
-      if (scrollDelta > 0) {
-        window.scrollTo(
-          scrollPosition.x,
-          scrollPosition.y + scrollDelta + SCROLL_BUFFER,
-        );
-      }
+      // Window itself has a different API for scrolling than elements especially on
+      // IE11.  Luckily we can get the documentElement (<HTML>) and operate on that.
+      scrollElement = window.document.documentElement;
+      scrollRect = { top: 0, bottom: window.innerHeight };
     } else {
-      invariant(
-        blockNode instanceof HTMLElement,
-        'blockNode is not an HTMLElement',
-      );
-      var blockBottom = blockNode.offsetHeight + blockNode.offsetTop;
-      var scrollBottom = scrollParent.offsetHeight + scrollPosition.y;
-      scrollDelta = blockBottom - scrollBottom;
-      if (scrollDelta > 0) {
-        Scroll.setTop(
-          scrollParent,
-          Scroll.getTop(scrollParent) + scrollDelta + SCROLL_BUFFER,
-        );
-      }
+      scrollElement = scrollParent;
+      scrollRect = scrollElement.getBoundingClientRect();
+    }
+
+    if (blockRect.top < scrollRect.top) {
+      // If the top of the block is above the scroll element, scroll up.
+      scrollElement.scrollTop -= (scrollRect.top - blockRect.top + SCROLL_BUFFER);
+    } else if (blockRect.bottom > scrollRect.bottom) {
+      // If the bottom of the block is below the scroll element, scroll down.
+      scrollElement.scrollTop += (blockRect.bottom - scrollRect.bottom + SCROLL_BUFFER);
     }
   }
+
+
 
   _renderChildren(): Array<React.Element<any>> {
     var block = this.props.block;
@@ -204,7 +203,7 @@ class DraftEditorBlock extends React.Component {
   }
 
   render(): React.Element<any> {
-    const {direction, offsetKey} = this.props;
+    const { direction, offsetKey } = this.props;
     const className = cx({
       'public/DraftStyleDefault/block': true,
       'public/DraftStyleDefault/ltr': direction === 'LTR',
@@ -212,7 +211,11 @@ class DraftEditorBlock extends React.Component {
     });
 
     return (
-      <div data-offset-key={offsetKey} className={className}>
+      <div
+        data-offset-key={offsetKey}
+        className={className}
+        ref={ref => (this._element = ref)}
+      >
         {this._renderChildren()}
       </div>
     );
